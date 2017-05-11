@@ -1,0 +1,119 @@
+comment "//" ;
+comment "/*" "*/" ;
+
+Prog. Program ::= ProgramHeader Declarations CompoundStatement ".";
+
+ProgHead. ProgramHeader ::= "program" Ident ";";
+
+Dec. Declarations ::= VariableDeclarations ProcedureDeclarations ;
+
+VarDecEmpty. VariableDeclarations ::=  ; 
+VarDecFull.  VariableDeclarations ::= "var" VariableDeclarationList ;
+
+VarDecListEnd. VariableDeclarationList ::= VarDec ; 
+VarDecList.    VariableDeclarationList ::= VarDec VariableDeclarationList ;
+
+VarDecLabel. VarDec ::= IdList ":" TypeSpecifier ";" ;
+
+ProcDecEmpty. ProcedureDeclarations ::=  ;
+ProcDecLabel. ProcedureDeclarations ::= ProcDec ProcedureDeclarations ;
+
+ProcDecProc. ProcDec ::= ProcHeader VariableDeclarations CompoundStatement ";" ;
+ProcDecFun.  ProcDec ::= FuncHeader VariableDeclarations CompoundStatement ";" ;
+
+ProcHead. ProcHeader ::= "procedure" Ident Arguments ";" ;
+
+FunHead. FuncHeader ::= "function" Ident Arguments ":" TypeSpecifier ";" ;
+
+Args. Arguments ::= "("ArgumentList")" ;
+
+ArgListEmpty. ArgumentList ::= ;
+ArgList.      ArgumentList ::= Arg ";" ArgumentList ;
+
+ArgLabel. Arg ::= IdList ":" TypeSpecifier ;
+
+CompStmnt. CompoundStatement ::= "begin" StatementList "end" ;
+
+StmntListEmpty. StatementList ::= ;
+StmntList.      StatementList ::= Statement ";" StatementList ;
+
+SEmpty. Statement ::=  ;
+SComp.  Statement ::= CompoundStatement ;
+SAss.   Statement ::= AssignmentStatement ;
+SProc.  Statement ::= ProcedureCall ;
+SFor.   Statement ::= ForStatement ;
+SWhile. Statement ::= WhileStatement ;
+SIf.    Statement ::= IfStatement ;
+SPrint. Statement ::= PrintStatement ;
+
+AssStmnt. AssignmentStatement ::= Ident ":=" Expression ;
+
+ProcCall. ProcedureCall ::= Ident Actuals ;
+
+ForStmnt. ForStatement ::= "for" Ident ":=" Expression "to" Expression "do" Statement ;
+
+WhileStmnt. WhileStatement ::= "while" Expression "do" Statement ;
+
+IfStmnt.         IfStatement ::= "if" Expression "then" Statement "endif";
+IfStmntWithElse. IfStatement ::= "if" Expression "then" Statement "else" Statement "endif";
+
+PrintStmnt. PrintStatement ::= "print" Expression ;
+
+ExpSimple.         Expression ::= SimpleExpression ;
+ExpEqual.          Expression ::= SimpleExpression "=" SimpleExpression ;
+ExpNotEqual.       Expression ::= SimpleExpression "<>" SimpleExpression ;
+ExpLess.           Expression ::= SimpleExpression "<" SimpleExpression ;
+ExpLessOrEqual.    Expression ::= SimpleExpression "<=" SimpleExpression ;
+ExpGreater.        Expression ::= SimpleExpression ">" SimpleExpression ;
+ExpGreaterOrEqual. Expression ::= SimpleExpression ">=" SimpleExpression ;
+
+SimpleExpTerm.  SimpleExpression ::= Term ;
+SimpleExpAdd.   SimpleExpression ::= SimpleExpression "+" Term ;
+SimpleExpSubst. SimpleExpression ::= SimpleExpression "-" Term ;
+
+TermFactor.   Term ::= Factor ;
+TermMultiply. Term ::= Term "*" Factor ;
+TermDivide.   Term ::= Term "/" Factor ;
+
+FactorExpression.   Factor ::= "(" Expression ")" ;
+FactorPlus.         Factor ::= "+" Factor ;
+FactorMinus.        Factor ::= "-" Factor ;
+FactorFunctionCall. Factor ::= FunctionCall ;
+FactorConstant.     Factor ::= Constant ;
+FactorIdent.        Factor ::= Ident ;
+FactorStoI.         Factor ::= "string_to_int" "(" Expression ")";
+FactorItoS.         Factor ::= "int_to_string" "(" Expression ")";
+
+FunsCall. FunctionCall ::= Ident Actuals ;
+
+Act. Actuals ::= "(" ExpressionList ")" ;
+
+ExpListEmpty. ExpressionList ::= ;
+ExpList.      ExpressionList ::= Expression "," ExpressionList ;
+
+IdLEnd. IdList ::= Ident ;
+IdL.    IdList ::= Ident "," IdList ;
+
+TypeSpecInt.    TypeSpecifier ::= "int" ;
+TypeSpecBool.   TypeSpecifier ::= "bool" ;
+TypeSpecString. TypeSpecifier ::= "string" ;
+TypeSpecArray.  TypeSpecifier ::= "array" "[" DimensionList "]" "of" TypeSpecifier ;
+
+DimListEnd. DimensionList ::= Dimension ;
+DimList.    DimensionList ::= Dimension "," DimensionList ;
+
+DimId.    Dimension ::= Ident ;
+DimConst. Dimension ::= Constant ;
+
+ConstInt.    Constant ::= Integer ;
+ConstBool.   Constant ::= Boolean ;
+ConstString. Constant ::= String ;
+
+BoolTrue.  Boolean ::= "true" ;
+BoolFalse. Boolean ::= "false" ;
+
+
+
+
+
+
