@@ -1,0 +1,14 @@
+program f;
+
+var x, y: int;
+s: string;
+
+begin
+
+x := 12;
+s := int_to_string(x);
+print(s);
+s := "453";
+y := string_to_int(s);
+print(y);
+end.

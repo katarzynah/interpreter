@@ -113,9 +113,9 @@ transProcHeader :: ProcHeader -> [Ident]
 transProcHeader x = case x of
   ProcHead ident arguments -> transArguments arguments
 
-transFuncHeader :: FuncHeader -> Result
+transFuncHeader :: FuncHeader -> [Ident]
 transFuncHeader x = case x of
-  FunHead ident arguments typespecifier -> failure x
+  FunHead ident arguments typespecifier -> transArguments arguments
 
 transArguments :: Arguments -> [Ident]
 transArguments x = case x of
@@ -168,7 +168,7 @@ _evaluateArguments (expr : exprs) env values = do
 evaluateArguments :: [Expression] -> GEnv -> IO([Value], GEnv)
 evaluateArguments exprs env = _evaluateArguments exprs env []
 
--- TODO(Kasia): Since I have supprot for any embedded functions, I should add them.
+-- TODO(Kasia): Since I have support for any embedded functions, I should add them.
 transProcedureCall :: ProcedureCall -> GEnv -> IO GEnv
 transProcedureCall x env = case x of
   ProcCall ident actuals -> do
@@ -180,13 +180,37 @@ transProcedureCall x env = case x of
         let argumentIdents = transProcHeader procheader
         if (length values) /= (length argumentIdents) then error ("Wrong number of arguments")
         else do
+          -- adding a new local environment to our environments
           let newEnv = ((emptyEnv) : env')
+          -- declaring procedure arguments in the environment
           let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents
+          -- setting the values of arguments in the environment
           let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
+          -- adding local variable declarations
           newEnvWithArgsAndVars <- transVariableDeclarations variabledeclarations newEnvWithArgs
           finalEnv <- transCompoundStatement compoundstatement newEnvWithArgsAndVars
           case finalEnv of
             (localEnv : env) -> do return(env)
+
+transFunctionCall :: FunctionCall -> GEnv -> IO (Value, GEnv)
+transFunctionCall x env = case x of
+  FunsCall ident actuals -> do
+    let funcDec = getDecl env ident
+    let arguments = transActuals actuals
+    (values, env') <- evaluateArguments arguments env
+    case funcDec of
+      (ProcDecFun funcheader variabledeclarations compoundstatement) -> do
+        let argumentIdents = transFuncHeader funcheader
+        if (length values) /= (length argumentIdents) then error ("Wrong number of arguments")
+        else do
+          let newEnv = ((emptyEnv) : env')
+          let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents
+          let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
+          newEnvWithArgsAndVars <- transVariableDeclarations variabledeclarations newEnvWithArgs
+          let newEnvWithResult = declareVar newEnvWithArgsAndVars ident
+          finalEnv <- transCompoundStatement compoundstatement newEnvWithResult
+          case finalEnv of
+            (localEnv : env) -> do return(getVarVal finalEnv ident, env)
 
 executeForStatement :: Ident -> Value -> Statement -> GEnv -> IO GEnv
 executeForStatement ident endValue statement env = do
@@ -291,15 +315,18 @@ transFactor x env = case x of
     (val, env') <- transFactor factor env
     case val of
         VInt x -> return(VInt(-x), env')
-  --FactorFunctionCall functioncall -> failure x
+  FactorFunctionCall functioncall -> transFunctionCall functioncall env
   FactorConstant constant -> return (transConstant constant, env)
   FactorIdent ident -> do
     return (getVarVal env ident, env)
-  --FactorStoI expression -> failure x
-  --FactorItoS expression -> failure x
-transFunctionCall :: FunctionCall -> Result
-transFunctionCall x = case x of
-  FunsCall ident actuals -> failure x
+  FactorStoI expression -> do
+    (val, env') <- transExpression expression env
+    case val of
+      (VString str) -> return (VInt(read str :: Integer), env')
+  FactorItoS expression -> do
+    (val, env') <- transExpression expression env
+    case val of
+      (VInt val) -> return (VString(show val), env')
 
 transActuals :: Actuals -> [Expression]
 transActuals x = case x of
@@ -349,6 +376,7 @@ transBoolean x = case x of
 
 
 -- GEnv helper functions
+
 -- Add variable identifier to the most local environment with unspecified value.
 declareVar :: GEnv -> Ident -> GEnv
 declareVar ((localVEnv, lovalPEnv) : envs) ident =
