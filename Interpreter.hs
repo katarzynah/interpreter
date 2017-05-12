@@ -117,7 +117,7 @@ transStatement x env = case x of
   --SProc procedurecall -> failure x
   SFor forstatement -> transForStatement forstatement env
   SWhile whilestatement -> transWhileStatement whilestatement env
-  --SIf ifstatement -> failure x
+  SIf ifstatement -> transIfStatement ifstatement env
   SPrint printstatement -> transPrintStatement printstatement env
 
 transAssignmentStatement :: AssignmentStatement -> VEnv -> IO VEnv
@@ -157,10 +157,21 @@ transWhileStatement x env = case x of
         transWhileStatement x env''
       VBool(False) -> return env'
 
-transIfStatement :: IfStatement -> Result
-transIfStatement x = case x of
-  IfStmnt expression statement -> failure x
-  IfStmntWithElse expression statement1 statement2 -> failure x
+transIfStatement :: IfStatement -> VEnv -> IO VEnv
+transIfStatement x env = case x of
+  IfStmnt expression statement -> do
+    (val, env') <- transExpression expression env
+    case val of
+      VBool(True) -> do
+        transStatement statement env'
+      VBool(False) -> return env'
+  IfStmntWithElse expression statement1 statement2 -> do
+    (val, env') <- transExpression expression env
+    case val of
+      VBool(True) -> do
+        transStatement statement1 env'
+      VBool(False) -> do
+        transStatement statement2 env'
 
 transPrintStatement :: PrintStatement -> VEnv -> IO VEnv
 transPrintStatement x env = case x of
