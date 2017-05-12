@@ -25,9 +25,13 @@ instance Ord Value where
     compare (VString val1) (VString val2) = compare val1 val2
 
 type VEnv = Map.Map Ident Value
+type PEnv = Map.Map Ident (ProcDec)
 
 emptyVEnv :: VEnv
 emptyVEnv = Map.empty
+
+emptyPEnv :: PEnv
+emptyPEnv = Map.empty
 
 failure :: Show a => a -> Result
 failure x = Bad $ "Undefined case: " ++ show x
@@ -35,19 +39,21 @@ failure x = Bad $ "Undefined case: " ++ show x
 transProgram :: Program -> IO()
 transProgram x = case x of
   Prog programheader declarations compoundstatement -> do
-    env <- transDeclarations declarations emptyVEnv
-    env' <- transCompoundStatement compoundstatement env
+    (venv, penv) <- transDeclarations declarations emptyVEnv emptyPEnv
+    print penv
+    venv' <- transCompoundStatement compoundstatement venv
     return ()
 
 transProgramHeader :: ProgramHeader -> Result
 transProgramHeader x = case x of
   ProgHead ident -> failure x
 
-transDeclarations :: Declarations -> VEnv -> IO VEnv
-transDeclarations x env = case x of
+transDeclarations :: Declarations -> VEnv -> PEnv -> IO (VEnv, PEnv)
+transDeclarations x env penv = case x of
   Dec variabledeclarations proceduredeclarations -> do
     env' <- transVariableDeclarations variabledeclarations env
-    return (env')
+    penv' <- transProcedureDeclarations proceduredeclarations penv
+    return (env', penv')
 
 transVariableDeclarations :: VariableDeclarations -> VEnv -> IO VEnv
 transVariableDeclarations x env = case x of
@@ -72,15 +78,25 @@ transVarDec x env = case x of
   VarDecLabel idlist typespecifier ->
     return (transIdList idlist env)
     
+transProcedureDeclarations :: ProcedureDeclarations -> PEnv -> IO PEnv
+transProcedureDeclarations x penv = case x of
+  ProcDecEmpty -> return penv
+  ProcDecLabel procdec proceduredeclarations -> do
+    penv' <- transProcDec procdec penv
+    transProcedureDeclarations proceduredeclarations penv'
 
-transProcedureDeclarations :: ProcedureDeclarations -> Result
-transProcedureDeclarations x = case x of
-  ProcDecEmpty -> failure x
-  ProcDecLabel procdec proceduredeclarations -> failure x
-transProcDec :: ProcDec -> Result
-transProcDec x = case x of
-  ProcDecProc procheader variabledeclarations compoundstatement -> failure x
-  ProcDecFun funcheader variabledeclarations compoundstatement -> failure x
+-- Get identifier from procedure/function declaration.
+getProcDecIdent :: ProcDec -> Ident
+getProcDecIdent (ProcDecProc (ProcHead id _) _ _) = id
+getProcDecIdent (ProcDecFun (FunHead id _ _) _ _) = id
+
+transProcDec :: ProcDec -> PEnv -> IO PEnv
+transProcDec x penv = case x of
+  ProcDecProc procheader variabledeclarations compoundstatement -> do
+    return(setDecl penv (getProcDecIdent x) x)
+  ProcDecFun funcheader variabledeclarations compoundstatement -> do
+    return(setDecl penv (getProcDecIdent x) x)
+
 transProcHeader :: ProcHeader -> Result
 transProcHeader x = case x of
   ProcHead ident arguments -> failure x
@@ -307,3 +323,15 @@ getVarVal env ident =
     Nothing -> error("Variable " ++ show ident ++ " not defined")
     Just val -> val
 
+-- PEnv helper functions
+setDecl :: PEnv -> Ident -> ProcDec -> PEnv
+setDecl penv ident procDec =
+  case Map.lookup ident penv of
+    Nothing -> Map.insert ident procDec penv
+    Just _ -> error("Function/procedure " ++ show ident ++ " already defined")
+
+getDecl :: PEnv -> Ident -> ProcDec
+getDecl penv ident =
+  case Map.lookup ident penv of
+    Nothing -> error("Function/procedure " ++ show ident ++ " not defined")
+    Just val -> val
