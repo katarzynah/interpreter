@@ -1,0 +1,20 @@
+program f;
+
+var x, y: int;
+
+function add(x, y:int;) : int;
+begin
+    add := x + y;
+end;
+
+procedure hej();
+begin
+    print("hej");
+end;
+
+begin
+    x := 12;
+    y := add (x, 5,);
+    print(y);
+    x := hej();
+end.
