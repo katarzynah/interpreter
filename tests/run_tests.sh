@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a tests=("test_dec" "test_fun_dec" "test1")
+declare -a tests=("test_dec" "test_fun_dec" "test1" "test_proc" "test_rekur")
 
 for i in "${tests[@]}"
 do

@@ -51,7 +51,7 @@ transProgram :: Program -> IO()
 transProgram x = case x of
   Prog programheader declarations compoundstatement -> do
     env <- transDeclarations declarations emptyGEnv
-    print env
+    print env --TODO: used in tests!!! but remove before turning in
     env' <- transCompoundStatement compoundstatement env
     return ()
 
@@ -179,9 +179,13 @@ transProcedureCall x env = case x of
         let argumentIdents = transProcHeader procheader
         if (length values) /= (length argumentIdents) then error ("Wrong number of arguments")
         else do
-          putStrLn "procedure call"
-          return (env')
-
+          let newEnv = ((emptyEnv) : env')
+          let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents
+          let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
+          newEnvWithArgsAndVars <- transVariableDeclarations variabledeclarations newEnvWithArgs
+          finalEnv <- transCompoundStatement compoundstatement newEnvWithArgsAndVars
+          case finalEnv of
+            (localEnv : env) -> do return(env)
 
 executeForStatement :: Ident -> Value -> Statement -> GEnv -> IO GEnv
 executeForStatement ident endValue statement env = do
@@ -364,6 +368,12 @@ setVarVal ((localVEnv, localPEnv) : envs) ident val =
   case Map.lookup ident localVEnv of
     Nothing -> ((localVEnv, localPEnv) : setVarVal envs ident val)
     Just _ -> ((Map.insert ident val localVEnv, localPEnv) : envs)
+
+-- Set values of a list of idents. The lists must be of same length!
+setVarsVals :: GEnv -> [Ident] -> [Value] -> GEnv
+setVarsVals env [] _ = env
+setVarsVals env (ident : idents) (val : vals) =
+  setVarsVals (setVarVal env ident val) idents vals
 
 -- Get value of variable with given identifier.
 getVarVal :: GEnv -> Ident -> Value
