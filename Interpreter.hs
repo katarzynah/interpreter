@@ -168,6 +168,7 @@ _evaluateArguments (expr : exprs) env values = do
 evaluateArguments :: [Expression] -> GEnv -> IO([Value], GEnv)
 evaluateArguments exprs env = _evaluateArguments exprs env []
 
+-- TODO(Kasia): Since I have supprot for any embedded functions, I should add them.
 transProcedureCall :: ProcedureCall -> GEnv -> IO GEnv
 transProcedureCall x env = case x of
   ProcCall ident actuals -> do
