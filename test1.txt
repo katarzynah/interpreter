@@ -1,0 +1,7 @@
+program f;
+var i, j, k: int;
+begin
+i := 12;
+j := i + 5;
+k := 6 * j;
+end.

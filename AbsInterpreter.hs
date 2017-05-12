@@ -8,6 +8,7 @@ module AbsInterpreter where
 
 
 newtype Ident = Ident String deriving (Eq, Ord, Show, Read)
+
 data Program = Prog ProgramHeader Declarations CompoundStatement
   deriving (Eq, Ord, Show, Read)
 

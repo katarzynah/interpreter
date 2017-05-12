@@ -1,7 +1,7 @@
 all:
 	happy -gca ParInterpreter.y
 	alex -g LexInterpreter.x
-	ghc --make TestInterpreter.hs -o TestInterpreter
+	ghc --make Interpret.hs -o Interpret
 
 clean:
 	-rm -f *.log *.aux *.hi *.o *.dvi
