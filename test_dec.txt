@@ -1,0 +1,8 @@
+program f;
+var i, j, k, l: int;
+s: string;
+b : bool;
+
+begin
+end.
+

@@ -1,0 +1,12 @@
+[(fromList [(Ident "b",undefined),(Ident "i",undefined),(Ident "j",undefined),(Ident "k",undefined),(Ident "l",undefined),(Ident "s",undefined)],fromList [(Ident "hej",ProcDecProc (ProcHead (Ident "hej") (Args (ArgList (ArgLabel (IdLEnd (Ident "x")) TypeSpecInt) ArgListEmpty))) (VarDecFull (VarDecListEnd (VarDecLabel (IdLEnd (Ident "y")) TypeSpecString))) (CompStmnt (StmntList (SPrint (PrintStmnt (ExpSimple (SimpleExpTerm (TermFactor (FactorExpression (ExpSimple (SimpleExpTerm (TermFactor (FactorIdent (Ident "y"))))))))))) StmntListEmpty)))])]
+1
+"hej"
+0
+0
+False
+1
+1
+0
+0
+"hej"
+"equal"

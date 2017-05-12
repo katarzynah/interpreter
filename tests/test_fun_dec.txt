@@ -1,0 +1,11 @@
+program f;
+
+procedure hej(x : int;);
+var y: string;
+begin
+print(y);
+print("hej");
+end;
+
+begin
+end.

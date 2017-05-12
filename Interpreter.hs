@@ -63,7 +63,7 @@ transDeclarations :: Declarations -> GEnv -> IO GEnv
 transDeclarations x env = case x of
   Dec variabledeclarations proceduredeclarations -> do
     env' <- transVariableDeclarations variabledeclarations env
-    env'' <- transProcedureDeclarations proceduredeclarations env
+    env'' <- transProcedureDeclarations proceduredeclarations env'
     return env''
 
 transVariableDeclarations :: VariableDeclarations -> GEnv -> IO GEnv
