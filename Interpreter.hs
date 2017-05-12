@@ -79,7 +79,7 @@ transVariableDeclarationList x env = case x of
 transVarDec :: VarDec -> VEnv -> IO VEnv
 transVarDec x env = case x of
   VarDecLabel idlist typespecifier ->
-    return (transIdList idlist env)
+    return (declareVars env (transIdList idlist))
     
 transProcedureDeclarations :: ProcedureDeclarations -> PEnv -> IO PEnv
 transProcedureDeclarations x penv = case x of
@@ -101,22 +101,26 @@ transProcDec x penv = case x of
   ProcDecFun funcheader variabledeclarations compoundstatement -> do
     return(setDecl penv (getProcDecIdent x) x)
 
-transProcHeader :: ProcHeader -> Result
+transProcHeader :: ProcHeader -> [Ident]
 transProcHeader x = case x of
-  ProcHead ident arguments -> failure x
+  ProcHead ident arguments -> transArguments arguments
+
 transFuncHeader :: FuncHeader -> Result
 transFuncHeader x = case x of
   FunHead ident arguments typespecifier -> failure x
-transArguments :: Arguments -> Result
+
+transArguments :: Arguments -> [Ident]
 transArguments x = case x of
-  Args argumentlist -> failure x
-transArgumentList :: ArgumentList -> Result
+  Args argumentlist -> transArgumentList argumentlist
+
+transArgumentList :: ArgumentList -> [Ident]
 transArgumentList x = case x of
-  ArgListEmpty -> failure x
-  ArgList arg argumentlist -> failure x
-transArg :: Arg -> Result
+  ArgListEmpty -> []
+  ArgList arg argumentlist -> transArg arg ++ transArgumentList argumentlist
+
+transArg :: Arg -> [Ident]
 transArg x = case x of
-  ArgLabel idlist typespecifier -> failure x
+  ArgLabel idlist typespecifier -> transIdList idlist
 
 transCompoundStatement :: CompoundStatement -> VEnv -> PEnv -> IO (VEnv, PEnv)
 transCompoundStatement x env penv = case x of
@@ -134,7 +138,7 @@ transStatement x env penv = case x of
   SEmpty -> return (env, penv)
   SComp compoundstatement -> transCompoundStatement compoundstatement env penv
   SAss assignmentstatement -> transAssignmentStatement assignmentstatement env penv
-  --SProc procedurecall -> failure x
+  SProc procedurecall -> transProcedureCall procedurecall env penv
   SFor forstatement -> transForStatement forstatement env penv
   SWhile whilestatement -> transWhileStatement whilestatement env penv
   SIf ifstatement -> transIfStatement ifstatement env penv
@@ -146,9 +150,32 @@ transAssignmentStatement x env penv = case x of
     (value, env', penv') <- transExpression expression env penv
     return (setVarVal env' ident value, penv')
 
-transProcedureCall :: ProcedureCall -> Result
-transProcedureCall x = case x of
-  ProcCall ident actuals -> failure x
+
+_evaluateArguments :: [Expression] -> VEnv -> PEnv -> [Value] -> IO([Value], VEnv, PEnv)
+_evaluateArguments [] env penv values = do
+  return(values, env, penv)
+_evaluateArguments (expr : exprs) env penv values = do
+  (val, env', penv') <- transExpression expr env penv
+  _evaluateArguments exprs env' penv' (values ++ [val])
+
+evaluateArguments :: [Expression] -> VEnv -> PEnv -> IO([Value], VEnv, PEnv)
+evaluateArguments exprs env penv = _evaluateArguments exprs env penv []
+
+
+transProcedureCall :: ProcedureCall -> VEnv -> PEnv -> IO (VEnv, PEnv)
+transProcedureCall x env penv = case x of
+  ProcCall ident actuals -> do
+    let procDec = getDecl penv ident
+    let arguments = transActuals actuals
+    (values, env', penv') <- evaluateArguments arguments env penv
+    case procDec of
+      (ProcDecProc procheader variabledeclarations compoundstatement) -> do
+        let argumentIdents = transProcHeader procheader
+        if (length values) /= (length argumentIdents) then error ("Wrong number of arguments")
+        else do
+          putStrLn "procedure call"
+          return (env', penv')
+
 
 executeForStatement :: Ident -> Value -> Statement -> VEnv -> PEnv -> IO (VEnv, PEnv)
 executeForStatement ident endValue statement env penv = do
@@ -262,18 +289,20 @@ transFactor x env penv = case x of
 transFunctionCall :: FunctionCall -> Result
 transFunctionCall x = case x of
   FunsCall ident actuals -> failure x
-transActuals :: Actuals -> Result
-transActuals x = case x of
-  Act expressionlist -> failure x
-transExpressionList :: ExpressionList -> Result
-transExpressionList x = case x of
-  ExpListEmpty -> failure x
-  ExpList expression expressionlist -> failure x
 
-transIdList :: IdList -> VEnv -> VEnv
-transIdList x env = case x of
-  IdLEnd ident -> declareVar env ident
-  IdL ident idlist -> transIdList idlist $ declareVar env ident
+transActuals :: Actuals -> [Expression]
+transActuals x = case x of
+  Act expressionlist -> transExpressionList expressionlist
+
+transExpressionList :: ExpressionList -> [Expression]
+transExpressionList x = case x of
+  ExpListEmpty -> []
+  ExpList expression expressionlist -> [expression] ++ transExpressionList expressionlist
+
+transIdList :: IdList -> [Ident]
+transIdList x = case x of
+  IdLEnd ident -> [ident]
+  IdL ident idlist -> [ident] ++ transIdList idlist
 
 transIdent :: Ident -> Result
 transIdent x = case x of
@@ -309,18 +338,26 @@ transBoolean x = case x of
 
 
 -- VEnv helper functions
+-- Add variable identifier to the environment with unspecified value.
 declareVar :: VEnv -> Ident -> VEnv
 declareVar env ident =
   case Map.lookup ident env of
     Nothing -> Map.insert ident VUndef env
     Just _ -> error("Variable " ++ show ident ++ " already declared")
 
+-- Add a list of variable identifiers to the environment with unspecified value.
+declareVars :: VEnv -> [Ident] -> VEnv
+declareVars env [] = env
+declareVars env (ident : idents) = declareVars (declareVar env ident) idents
+
+-- Set value of already declared variable with given identifier.
 setVarVal :: VEnv -> Ident -> Value -> VEnv
 setVarVal env ident val =
   case Map.lookup ident env of
     Nothing -> error("Variable " ++ show ident ++ " not defined")
     Just _ -> Map.insert ident val env
 
+-- Get value of variable with given identifier.
 getVarVal :: VEnv -> Ident -> Value
 getVarVal env ident =
   case Map.lookup ident env of
