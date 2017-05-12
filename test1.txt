@@ -1,7 +1,10 @@
 program f;
 var i, j, k: int;
+b : bool;
 begin
 i := 12;
 j := i + 5;
 k := 6 * j;
+b := k >= i;
+print(b);
 end.

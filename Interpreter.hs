@@ -9,10 +9,20 @@ type Result = Err String
 data Value = VInt Integer | VBool Bool | VString String | VUndef
 
 instance Show Value where
-    show (VInt i)       = show i
-    show (VBool d)      = show d
-    show (VString s)    = show s
+    show (VInt val)       = show val
+    show (VBool val)      = show val
+    show (VString val)    = show val
     show VUndef         = "undefined"
+
+instance Eq Value where
+    (VInt val1) == (VInt val2) = val1 == val2
+    (VBool val1) == (VBool val2) = val1 == val2
+    (VString val1) == (VString val2) = val1 == val2
+
+instance Ord Value where
+    compare (VInt val1) (VInt val2) = compare val1 val2
+    compare (VBool val1) (VBool val2) = compare val1 val2
+    compare (VString val1) (VString val2) = compare val1 val2
 
 type VEnv = Map.Map Ident Value
 
@@ -110,7 +120,7 @@ transStatement x env = case x of
   --SFor forstatement -> failure x
   --SWhile whilestatement -> failure x
   --SIf ifstatement -> failure x
-  --SPrint printstatement -> failure x
+  SPrint printstatement -> transPrintStatement printstatement env
 
 transAssignmentStatement :: AssignmentStatement -> VEnv -> IO VEnv
 transAssignmentStatement x env = case x of
@@ -139,15 +149,21 @@ transPrintStatement x env = case x of
     print val
     return (env')
 
+compareExpressions :: SimpleExpression -> SimpleExpression -> VEnv -> (Value -> Value -> Bool) -> IO (Value, VEnv)
+compareExpressions simExp1 simExp2 env comparer = do
+  (val1, env') <- transSimpleExpression simExp1 env
+  (val2, env'') <- transSimpleExpression simExp2 env'
+  return (VBool(comparer val1 val2), env'')
+
 transExpression :: Expression -> VEnv -> IO (Value, VEnv)
 transExpression x env = case x of
   ExpSimple simpleexpression -> transSimpleExpression simpleexpression env
-  --ExpEqual simpleexpression1 simpleexpression2 -> failure x
-  --ExpNotEqual simpleexpression1 simpleexpression2 -> failure x
-  --ExpLess simpleexpression1 simpleexpression2 -> failure x
-  --ExpLessOrEqual simpleexpression1 simpleexpression2 -> failure x
-  --ExpGreater simpleexpression1 simpleexpression2 -> failure x
-  --ExpGreaterOrEqual simpleexpression1 simpleexpression2 -> failure x
+  ExpEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (==))
+  ExpNotEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (/=))
+  ExpLess simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (<))
+  ExpLessOrEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (<=))
+  ExpGreater simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (>))
+  ExpGreaterOrEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (>=))
 
 transSimpleExpression :: SimpleExpression -> VEnv -> IO (Value, VEnv)
 transSimpleExpression x env = case x of
