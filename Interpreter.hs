@@ -131,9 +131,13 @@ transIfStatement :: IfStatement -> Result
 transIfStatement x = case x of
   IfStmnt expression statement -> failure x
   IfStmntWithElse expression statement1 statement2 -> failure x
-transPrintStatement :: PrintStatement -> Result
-transPrintStatement x = case x of
-  PrintStmnt expression -> failure x
+
+transPrintStatement :: PrintStatement -> VEnv -> IO VEnv
+transPrintStatement x env = case x of
+  PrintStmnt expression -> do
+    (val, env') <- transExpression expression env
+    print val
+    return (env')
 
 transExpression :: Expression -> VEnv -> IO (Value, VEnv)
 transExpression x env = case x of
@@ -240,17 +244,17 @@ declareVar :: VEnv -> Ident -> VEnv
 declareVar env ident =
   case Map.lookup ident env of
     Nothing -> Map.insert ident VUndef env
-    Just _ -> error("Variable alraedy declared")
+    Just _ -> error("Variable " ++ show ident ++ " already declared")
 
 setVarVal :: VEnv -> Ident -> Value -> VEnv
 setVarVal env ident val =
   case Map.lookup ident env of
-    Nothing -> error("Variable not defined")
+    Nothing -> error("Variable " ++ show ident ++ " not defined")
     Just _ -> Map.insert ident val env
 
 getVarVal :: VEnv -> Ident -> Value
 getVarVal env ident =
   case Map.lookup ident env of
-    Nothing -> error("Variable not defined")
+    Nothing -> error("Variable " ++ show ident ++ " not defined")
     Just val -> val
 
