@@ -36,9 +36,7 @@ transProgram :: Program -> IO()
 transProgram x = case x of
   Prog programheader declarations compoundstatement -> do
     env <- transDeclarations declarations emptyVEnv
-    print env
     env' <- transCompoundStatement compoundstatement env
-    print env'
     return ()
 
 transProgramHeader :: ProgramHeader -> Result
@@ -117,7 +115,7 @@ transStatement x env = case x of
   SComp compoundstatement -> transCompoundStatement compoundstatement env
   SAss assignmentstatement -> transAssignmentStatement assignmentstatement env
   --SProc procedurecall -> failure x
-  --SFor forstatement -> failure x
+  SFor forstatement -> transForStatement forstatement env
   --SWhile whilestatement -> failure x
   --SIf ifstatement -> failure x
   SPrint printstatement -> transPrintStatement printstatement env
@@ -131,9 +129,24 @@ transAssignmentStatement x env = case x of
 transProcedureCall :: ProcedureCall -> Result
 transProcedureCall x = case x of
   ProcCall ident actuals -> failure x
-transForStatement :: ForStatement -> Result
-transForStatement x = case x of
-  ForStmnt ident expression1 expression2 statement -> failure x
+
+executeForStatement :: Ident -> Value -> Statement -> VEnv -> IO VEnv
+executeForStatement ident endValue statement env = do
+  let i = getVarVal env ident
+  case (i, endValue) of
+    (VInt x, VInt y) ->
+      if i > endValue then return env
+      else do
+        env' <- transStatement statement env
+        executeForStatement ident endValue statement $ setVarVal env' ident (VInt(x+1))
+
+transForStatement :: ForStatement -> VEnv -> IO VEnv
+transForStatement x env = case x of
+  ForStmnt ident expression1 expression2 statement -> do
+    (val1, env') <- transExpression expression1 env
+    (val2, env'') <- transExpression expression2 env'
+    executeForStatement ident val2 statement $ setVarVal env ident val1
+    
 transWhileStatement :: WhileStatement -> Result
 transWhileStatement x = case x of
   WhileStmnt expression statement -> failure x
@@ -234,10 +247,12 @@ transTypeSpecifier x = case x of
   TypeSpecBool -> failure x
   TypeSpecString -> failure x
   TypeSpecArray dimensionlist typespecifier -> failure x
+
 transDimensionList :: DimensionList -> Result
 transDimensionList x = case x of
   DimListEnd dimension -> failure x
   DimList dimension dimensionlist -> failure x
+
 transDimension :: Dimension -> Result
 transDimension x = case x of
   DimId ident -> failure x
