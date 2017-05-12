@@ -68,21 +68,20 @@ transDeclarations x env = case x of
 
 transVariableDeclarations :: VariableDeclarations -> GEnv -> IO GEnv
 transVariableDeclarations x env = case x of
-  VarDecEmpty -> do
-    return (env)
+  VarDecEmpty -> do return env
   VarDecFull variabledeclarationlist -> do
     env' <- transVariableDeclarationList variabledeclarationlist env
-    return (env')
+    return env'
 
 transVariableDeclarationList :: VariableDeclarationList -> GEnv -> IO GEnv
 transVariableDeclarationList x env = case x of
   VarDecListEnd vardec -> do
     env' <- transVarDec vardec env
-    return (env')
+    return env'
   VarDecList vardec variabledeclarationlist -> do
     env' <- transVarDec vardec env
     env'' <- transVariableDeclarationList variabledeclarationlist env'
-    return (env'')
+    return env''
 
 transVarDec :: VarDec -> GEnv -> IO GEnv
 transVarDec x env = case x of
@@ -96,7 +95,7 @@ transProcedureDeclarations x env = case x of
     env' <- transProcDec procdec env
     transProcedureDeclarations proceduredeclarations env'
 
--- Get identifier from procedure/function declaration.
+-- Gets identifier from procedure/function declaration.
 getProcDecIdent :: ProcDec -> Ident
 getProcDecIdent (ProcDecProc (ProcHead id _) _ _) = id
 getProcDecIdent (ProcDecFun (FunHead id _ _) _ _) = id
@@ -218,7 +217,7 @@ executeForStatement ident endValue statement env = do
   let i = getVarVal env ident
   case (i, endValue) of
     (VInt x, VInt y) ->
-      if i > endValue then return (env)
+      if i > endValue then return env
       else do
         env' <- transStatement statement env
         executeForStatement ident endValue statement $ setVarVal env' ident (VInt(x+1))
@@ -313,7 +312,7 @@ transTerm x env = case x of
     (val2, env'') <- transFactor factor env'
     case (val1, val2) of
         (VInt x, VInt y) -> if y /=0 then return (VInt(div x y), env'')
-                            else error ("division by 0")
+                            else error ("Can't divide by 0")
         _ -> error ("Can only divide integers")
 
 transFactor :: Factor -> GEnv -> IO (Value, GEnv)
