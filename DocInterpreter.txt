@@ -65,8 +65,8 @@ All other symbols are terminals.
   | //VarDec// | -> | //IdList// ``:`` //TypeSpecifier// ``;`` 
   | //ProcedureDeclarations// | -> | **eps**
   |  |  **|**  | //ProcDec// //ProcedureDeclarations// 
-  | //ProcDec// | -> | //ProcHeader// //VariableDeclarations// //CompoundStatement// ``;`` 
-  |  |  **|**  | //FuncHeader// //VariableDeclarations// //CompoundStatement// ``;`` 
+  | //ProcDec// | -> | //ProcHeader// //Declarations// //CompoundStatement// ``;`` 
+  |  |  **|**  | //FuncHeader// //Declarations// //CompoundStatement// ``;`` 
   | //ProcHeader// | -> | ``procedure`` //Ident// //Arguments// ``;`` 
   | //FuncHeader// | -> | ``function`` //Ident// //Arguments// ``:`` //TypeSpecifier// ``;`` 
   | //Arguments// | -> | ``(`` //ArgumentList// ``)`` 

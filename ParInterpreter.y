@@ -120,8 +120,8 @@ ProcedureDeclarations :: { ProcedureDeclarations }
 ProcedureDeclarations : {- empty -} { AbsInterpreter.ProcDecEmpty }
                       | ProcDec ProcedureDeclarations { AbsInterpreter.ProcDecLabel $1 $2 }
 ProcDec :: { ProcDec }
-ProcDec : ProcHeader VariableDeclarations CompoundStatement ';' { AbsInterpreter.ProcDecProc $1 $2 $3 }
-        | FuncHeader VariableDeclarations CompoundStatement ';' { AbsInterpreter.ProcDecFun $1 $2 $3 }
+ProcDec : ProcHeader Declarations CompoundStatement ';' { AbsInterpreter.ProcDecProc $1 $2 $3 }
+        | FuncHeader Declarations CompoundStatement ';' { AbsInterpreter.ProcDecFun $1 $2 $3 }
 ProcHeader :: { ProcHeader }
 ProcHeader : 'procedure' Ident Arguments ';' { AbsInterpreter.ProcHead $2 $3 }
 FuncHeader :: { FuncHeader }

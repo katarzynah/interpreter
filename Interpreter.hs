@@ -103,9 +103,9 @@ getProcDecIdent (ProcDecFun (FunHead id _ _) _ _) = id
 -- TODO(Kasia): Simplify if not changed
 transProcDec :: ProcDec -> GEnv -> IO GEnv
 transProcDec x env = case x of
-  ProcDecProc procheader variabledeclarations compoundstatement -> do
+  ProcDecProc procheader declarations compoundstatement -> do
     return(setDecl env (getProcDecIdent x) x)
-  ProcDecFun funcheader variabledeclarations compoundstatement -> do
+  ProcDecFun funcheader declarations compoundstatement -> do
     return(setDecl env (getProcDecIdent x) x)
 
 transProcHeader :: ProcHeader -> [Ident]
@@ -175,7 +175,7 @@ transProcedureCall x env = case x of
     let arguments = transActuals actuals
     (values, env') <- evaluateArguments arguments env
     case procDec of
-      (ProcDecProc procheader variabledeclarations compoundstatement) -> do
+      (ProcDecProc procheader declarations compoundstatement) -> do
         let argumentIdents = transProcHeader procheader
         if (length values) /= (length argumentIdents) then error ("Wrong number of arguments")
         else do
@@ -186,7 +186,7 @@ transProcedureCall x env = case x of
           -- setting the values of arguments in the environment
           let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
           -- adding local variable declarations
-          newEnvWithArgsAndVars <- transVariableDeclarations variabledeclarations newEnvWithArgs
+          newEnvWithArgsAndVars <- transDeclarations declarations newEnvWithArgs
           finalEnv <- transCompoundStatement compoundstatement newEnvWithArgsAndVars
           case finalEnv of
             (localEnv : env) -> do return(env)
@@ -198,14 +198,14 @@ transFunctionCall x env = case x of
     let arguments = transActuals actuals
     (values, env') <- evaluateArguments arguments env
     case funcDec of
-      (ProcDecFun funcheader variabledeclarations compoundstatement) -> do
+      (ProcDecFun funcheader declarations compoundstatement) -> do
         let argumentIdents = transFuncHeader funcheader
         if (length values) /= (length argumentIdents) then error ("Wrong number of arguments")
         else do
           let newEnv = ((emptyEnv) : env')
           let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents
           let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
-          newEnvWithArgsAndVars <- transVariableDeclarations variabledeclarations newEnvWithArgs
+          newEnvWithArgsAndVars <- transDeclarations declarations newEnvWithArgs
           let newEnvWithResult = declareVar newEnvWithArgsAndVars ident
           finalEnv <- transCompoundStatement compoundstatement newEnvWithResult
           case finalEnv of

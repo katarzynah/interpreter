@@ -116,8 +116,8 @@ instance Print ProcedureDeclarations where
 
 instance Print ProcDec where
   prt i e = case e of
-    ProcDecProc procheader variabledeclarations compoundstatement -> prPrec i 0 (concatD [prt 0 procheader, prt 0 variabledeclarations, prt 0 compoundstatement, doc (showString ";")])
-    ProcDecFun funcheader variabledeclarations compoundstatement -> prPrec i 0 (concatD [prt 0 funcheader, prt 0 variabledeclarations, prt 0 compoundstatement, doc (showString ";")])
+    ProcDecProc procheader declarations compoundstatement -> prPrec i 0 (concatD [prt 0 procheader, prt 0 declarations, prt 0 compoundstatement, doc (showString ";")])
+    ProcDecFun funcheader declarations compoundstatement -> prPrec i 0 (concatD [prt 0 funcheader, prt 0 declarations, prt 0 compoundstatement, doc (showString ";")])
 
 instance Print ProcHeader where
   prt i e = case e of

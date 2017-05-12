@@ -18,8 +18,8 @@ VarDecLabel. VarDec ::= IdList ":" TypeSpecifier ";" ;
 ProcDecEmpty. ProcedureDeclarations ::=  ;
 ProcDecLabel. ProcedureDeclarations ::= ProcDec ProcedureDeclarations ;
 
-ProcDecProc. ProcDec ::= ProcHeader VariableDeclarations CompoundStatement ";" ;
-ProcDecFun.  ProcDec ::= FuncHeader VariableDeclarations CompoundStatement ";" ;
+ProcDecProc. ProcDec ::= ProcHeader Declarations CompoundStatement ";" ;
+ProcDecFun.  ProcDec ::= FuncHeader Declarations CompoundStatement ";" ;
 
 ProcHead. ProcHeader ::= "procedure" Ident Arguments ";" ;
 

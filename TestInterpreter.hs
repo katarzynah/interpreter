@@ -8,10 +8,12 @@ import System.Exit ( exitFailure, exitSuccess )
 
 import LexInterpreter
 import ParInterpreter
+import SkelInterpreter
 import PrintInterpreter
 import AbsInterpreter
 
-import Interpreter
+
+
 
 import ErrM
 
@@ -36,6 +38,7 @@ run v p s = let ts = myLLexer s in case p ts of
                           exitFailure
            Ok  tree -> do putStrLn "\nParse Successful!"
                           showTree v tree
+
                           exitSuccess
 
 
@@ -60,8 +63,10 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-    [file] -> readFile file >>= run 2 pProgram
+    ["--help"] -> usage
     [] -> hGetContents stdin >>= run 2 pProgram
+    "-s":fs -> mapM_ (runFile 0 pProgram) fs
+    fs -> mapM_ (runFile 2 pProgram) fs
 
 
 

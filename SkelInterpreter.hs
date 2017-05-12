@@ -38,8 +38,8 @@ transProcedureDeclarations x = case x of
   ProcDecLabel procdec proceduredeclarations -> failure x
 transProcDec :: ProcDec -> Result
 transProcDec x = case x of
-  ProcDecProc procheader variabledeclarations compoundstatement -> failure x
-  ProcDecFun funcheader variabledeclarations compoundstatement -> failure x
+  ProcDecProc procheader declarations compoundstatement -> failure x
+  ProcDecFun funcheader declarations compoundstatement -> failure x
 transProcHeader :: ProcHeader -> Result
 transProcHeader x = case x of
   ProcHead ident arguments -> failure x

@@ -8,7 +8,6 @@ module AbsInterpreter where
 
 
 newtype Ident = Ident String deriving (Eq, Ord, Show, Read)
-
 data Program = Prog ProgramHeader Declarations CompoundStatement
   deriving (Eq, Ord, Show, Read)
 
@@ -34,8 +33,8 @@ data ProcedureDeclarations
   deriving (Eq, Ord, Show, Read)
 
 data ProcDec
-    = ProcDecProc ProcHeader VariableDeclarations CompoundStatement
-    | ProcDecFun FuncHeader VariableDeclarations CompoundStatement
+    = ProcDecProc ProcHeader Declarations CompoundStatement
+    | ProcDecFun FuncHeader Declarations CompoundStatement
   deriving (Eq, Ord, Show, Read)
 
 data ProcHeader = ProcHead Ident Arguments

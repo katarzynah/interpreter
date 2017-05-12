@@ -1,0 +1,35 @@
+program f;
+
+procedure x();
+    var x,y :int;
+
+    procedure z();
+        var a,b : int;
+        s: string;
+
+        procedure hej();
+            begin
+                print("hej");
+            end;
+
+        procedure ho();
+            begin
+                print("ho");
+            end;
+
+        begin
+            hej();
+            ho();
+            x := 15;
+            a := 12;
+        end;
+
+    begin
+        z();
+        print(x);
+        print(a);
+    end;
+
+begin
+    x();
+end.
