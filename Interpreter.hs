@@ -24,17 +24,25 @@ instance Ord Value where
     compare (VBool val1) (VBool val2) = compare val1 val2
     compare (VString val1) (VString val2) = compare val1 val2
 
--- Environment variable mapping variable identificators to their values.
+-- Type mapping variable identificators to their values.
 type VEnv = Map.Map Ident Value
--- Environment variable mapping function/procedure identificators to their
--- declarations.
+
+-- Type mapping function/procedure identificators to their declarations.
 type PEnv = Map.Map Ident (ProcDec)
 
-emptyVEnv :: VEnv
-emptyVEnv = Map.empty
+-- Type containing both of the above.
+type Env = (VEnv, PEnv)
 
-emptyPEnv :: PEnv
-emptyPEnv = Map.empty
+-- Type containing list of environments - each next index is the next embedded
+-- level of declarations. It keeps the levels in revers order, so that the most
+-- global declarations are at the end of the list.
+type GEnv = [Env]
+
+emptyEnv :: Env
+emptyEnv = (Map.empty, Map.empty)
+
+emptyGEnv :: GEnv
+emptyGEnv = [emptyEnv]
 
 failure :: Show a => a -> Result
 failure x = Bad $ "Undefined case: " ++ show x
@@ -42,31 +50,31 @@ failure x = Bad $ "Undefined case: " ++ show x
 transProgram :: Program -> IO()
 transProgram x = case x of
   Prog programheader declarations compoundstatement -> do
-    (venv, penv) <- transDeclarations declarations emptyVEnv emptyPEnv
-    print penv
-    (venv', penv') <- transCompoundStatement compoundstatement venv penv
+    env <- transDeclarations declarations emptyGEnv
+    print env
+    env' <- transCompoundStatement compoundstatement env
     return ()
 
 transProgramHeader :: ProgramHeader -> Result
 transProgramHeader x = case x of
   ProgHead ident -> failure x
 
-transDeclarations :: Declarations -> VEnv -> PEnv -> IO (VEnv, PEnv)
-transDeclarations x env penv = case x of
+transDeclarations :: Declarations -> GEnv -> IO GEnv
+transDeclarations x env = case x of
   Dec variabledeclarations proceduredeclarations -> do
     env' <- transVariableDeclarations variabledeclarations env
-    penv' <- transProcedureDeclarations proceduredeclarations penv
-    return (env', penv')
+    env'' <- transProcedureDeclarations proceduredeclarations env
+    return env''
 
-transVariableDeclarations :: VariableDeclarations -> VEnv -> IO VEnv
+transVariableDeclarations :: VariableDeclarations -> GEnv -> IO GEnv
 transVariableDeclarations x env = case x of
   VarDecEmpty -> do
-    return(env)
+    return (env)
   VarDecFull variabledeclarationlist -> do
     env' <- transVariableDeclarationList variabledeclarationlist env
     return (env')
 
-transVariableDeclarationList :: VariableDeclarationList -> VEnv -> IO VEnv
+transVariableDeclarationList :: VariableDeclarationList -> GEnv -> IO GEnv
 transVariableDeclarationList x env = case x of
   VarDecListEnd vardec -> do
     env' <- transVarDec vardec env
@@ -76,17 +84,17 @@ transVariableDeclarationList x env = case x of
     env'' <- transVariableDeclarationList variabledeclarationlist env'
     return (env'')
 
-transVarDec :: VarDec -> VEnv -> IO VEnv
+transVarDec :: VarDec -> GEnv -> IO GEnv
 transVarDec x env = case x of
   VarDecLabel idlist typespecifier ->
     return (declareVars env (transIdList idlist))
     
-transProcedureDeclarations :: ProcedureDeclarations -> PEnv -> IO PEnv
-transProcedureDeclarations x penv = case x of
-  ProcDecEmpty -> return penv
+transProcedureDeclarations :: ProcedureDeclarations -> GEnv -> IO GEnv
+transProcedureDeclarations x env = case x of
+  ProcDecEmpty -> return env
   ProcDecLabel procdec proceduredeclarations -> do
-    penv' <- transProcDec procdec penv
-    transProcedureDeclarations proceduredeclarations penv'
+    env' <- transProcDec procdec env
+    transProcedureDeclarations proceduredeclarations env'
 
 -- Get identifier from procedure/function declaration.
 getProcDecIdent :: ProcDec -> Ident
@@ -94,12 +102,12 @@ getProcDecIdent (ProcDecProc (ProcHead id _) _ _) = id
 getProcDecIdent (ProcDecFun (FunHead id _ _) _ _) = id
 
 -- TODO(Kasia): Simplify if not changed
-transProcDec :: ProcDec -> PEnv -> IO PEnv
-transProcDec x penv = case x of
+transProcDec :: ProcDec -> GEnv -> IO GEnv
+transProcDec x env = case x of
   ProcDecProc procheader variabledeclarations compoundstatement -> do
-    return(setDecl penv (getProcDecIdent x) x)
+    return(setDecl env (getProcDecIdent x) x)
   ProcDecFun funcheader variabledeclarations compoundstatement -> do
-    return(setDecl penv (getProcDecIdent x) x)
+    return(setDecl env (getProcDecIdent x) x)
 
 transProcHeader :: ProcHeader -> [Ident]
 transProcHeader x = case x of
@@ -122,168 +130,166 @@ transArg :: Arg -> [Ident]
 transArg x = case x of
   ArgLabel idlist typespecifier -> transIdList idlist
 
-transCompoundStatement :: CompoundStatement -> VEnv -> PEnv -> IO (VEnv, PEnv)
-transCompoundStatement x env penv = case x of
-  CompStmnt statementlist -> transStatementList statementlist env penv
+transCompoundStatement :: CompoundStatement -> GEnv -> IO GEnv
+transCompoundStatement x env = case x of
+  CompStmnt statementlist -> transStatementList statementlist env
 
-transStatementList :: StatementList -> VEnv -> PEnv -> IO (VEnv, PEnv)
-transStatementList x env penv = case x of
-  StmntListEmpty -> return (env, penv)
+transStatementList :: StatementList -> GEnv -> IO GEnv
+transStatementList x env = case x of
+  StmntListEmpty -> return env
   StmntList statement statementlist -> do
-    (env', penv') <- transStatement statement env penv
-    transStatementList statementlist env' penv'
+    env' <- transStatement statement env
+    transStatementList statementlist env'
 
-transStatement :: Statement -> VEnv -> PEnv -> IO (VEnv, PEnv)
-transStatement x env penv = case x of
-  SEmpty -> return (env, penv)
-  SComp compoundstatement -> transCompoundStatement compoundstatement env penv
-  SAss assignmentstatement -> transAssignmentStatement assignmentstatement env penv
-  SProc procedurecall -> transProcedureCall procedurecall env penv
-  SFor forstatement -> transForStatement forstatement env penv
-  SWhile whilestatement -> transWhileStatement whilestatement env penv
-  SIf ifstatement -> transIfStatement ifstatement env penv
-  SPrint printstatement -> transPrintStatement printstatement env penv
+transStatement :: Statement -> GEnv -> IO GEnv
+transStatement x env = case x of
+  SEmpty -> return env
+  SComp compoundstatement -> transCompoundStatement compoundstatement env
+  SAss assignmentstatement -> transAssignmentStatement assignmentstatement env
+  SProc procedurecall -> transProcedureCall procedurecall env
+  SFor forstatement -> transForStatement forstatement env
+  SWhile whilestatement -> transWhileStatement whilestatement env
+  SIf ifstatement -> transIfStatement ifstatement env
+  SPrint printstatement -> transPrintStatement printstatement env
 
-transAssignmentStatement :: AssignmentStatement -> VEnv -> PEnv -> IO (VEnv, PEnv)
-transAssignmentStatement x env penv = case x of
+transAssignmentStatement :: AssignmentStatement -> GEnv -> IO GEnv
+transAssignmentStatement x env = case x of
   AssStmnt ident expression -> do
-    (value, env', penv') <- transExpression expression env penv
-    return (setVarVal env' ident value, penv')
+    (value, env') <- transExpression expression env
+    return (setVarVal env' ident value)
 
+_evaluateArguments :: [Expression] -> GEnv -> [Value] -> IO([Value], GEnv)
+_evaluateArguments [] env values = do
+  return(values, env)
+_evaluateArguments (expr : exprs) env values = do
+  (val, env') <- transExpression expr env
+  _evaluateArguments exprs env' (values ++ [val])
 
-_evaluateArguments :: [Expression] -> VEnv -> PEnv -> [Value] -> IO([Value], VEnv, PEnv)
-_evaluateArguments [] env penv values = do
-  return(values, env, penv)
-_evaluateArguments (expr : exprs) env penv values = do
-  (val, env', penv') <- transExpression expr env penv
-  _evaluateArguments exprs env' penv' (values ++ [val])
+evaluateArguments :: [Expression] -> GEnv -> IO([Value], GEnv)
+evaluateArguments exprs env = _evaluateArguments exprs env []
 
-evaluateArguments :: [Expression] -> VEnv -> PEnv -> IO([Value], VEnv, PEnv)
-evaluateArguments exprs env penv = _evaluateArguments exprs env penv []
-
-
-transProcedureCall :: ProcedureCall -> VEnv -> PEnv -> IO (VEnv, PEnv)
-transProcedureCall x env penv = case x of
+transProcedureCall :: ProcedureCall -> GEnv -> IO GEnv
+transProcedureCall x env = case x of
   ProcCall ident actuals -> do
-    let procDec = getDecl penv ident
+    let procDec = getDecl env ident
     let arguments = transActuals actuals
-    (values, env', penv') <- evaluateArguments arguments env penv
+    (values, env') <- evaluateArguments arguments env
     case procDec of
       (ProcDecProc procheader variabledeclarations compoundstatement) -> do
         let argumentIdents = transProcHeader procheader
         if (length values) /= (length argumentIdents) then error ("Wrong number of arguments")
         else do
           putStrLn "procedure call"
-          return (env', penv')
+          return (env')
 
 
-executeForStatement :: Ident -> Value -> Statement -> VEnv -> PEnv -> IO (VEnv, PEnv)
-executeForStatement ident endValue statement env penv = do
+executeForStatement :: Ident -> Value -> Statement -> GEnv -> IO GEnv
+executeForStatement ident endValue statement env = do
   let i = getVarVal env ident
   case (i, endValue) of
     (VInt x, VInt y) ->
-      if i > endValue then return (env, penv)
+      if i > endValue then return (env)
       else do
-        (env', penv') <- transStatement statement env penv
-        executeForStatement ident endValue statement (setVarVal env' ident (VInt(x+1))) penv'
+        env' <- transStatement statement env
+        executeForStatement ident endValue statement $ setVarVal env' ident (VInt(x+1))
 
-transForStatement :: ForStatement -> VEnv -> PEnv -> IO (VEnv, PEnv)
-transForStatement x env penv = case x of
+transForStatement :: ForStatement -> GEnv -> IO GEnv
+transForStatement x env = case x of
   ForStmnt ident expression1 expression2 statement -> do
-    (val1, env', penv') <- transExpression expression1 env penv
-    (val2, env'', penv'') <- transExpression expression2 env' penv'
-    executeForStatement ident val2 statement (setVarVal env'' ident val1) penv''
+    (val1, env') <- transExpression expression1 env
+    (val2, env'') <- transExpression expression2 env'
+    executeForStatement ident val2 statement $ setVarVal env'' ident val1
     
-transWhileStatement :: WhileStatement -> VEnv -> PEnv -> IO (VEnv, PEnv)
-transWhileStatement x env penv = case x of
+transWhileStatement :: WhileStatement -> GEnv -> IO GEnv
+transWhileStatement x env = case x of
   WhileStmnt expression statement -> do
-    (val, env', penv') <- transExpression expression env penv
+    (val, env') <- transExpression expression env
     case val of
       VBool(True) -> do
-        (env'', penv'') <- transStatement statement env' penv'
-        transWhileStatement x env'' penv''
-      VBool(False) -> return (env', penv')
+        env'' <- transStatement statement env'
+        transWhileStatement x env''
+      VBool(False) -> return (env')
 
-transIfStatement :: IfStatement -> VEnv -> PEnv -> IO (VEnv, PEnv)
-transIfStatement x env penv = case x of
+transIfStatement :: IfStatement -> GEnv -> IO GEnv
+transIfStatement x env = case x of
   IfStmnt expression statement -> do
-    (val, env', penv') <- transExpression expression env penv
+    (val, env') <- transExpression expression env
     case val of
       VBool(True) -> do
-        transStatement statement env' penv'
-      VBool(False) -> return (env', penv')
+        transStatement statement env'
+      VBool(False) -> return (env')
   IfStmntWithElse expression statement1 statement2 -> do
-    (val, env', penv') <- transExpression expression env penv
+    (val, env') <- transExpression expression env
     case val of
       VBool(True) -> do
-        transStatement statement1 env' penv'
+        transStatement statement1 env'
       VBool(False) -> do
-        transStatement statement2 env' penv'
+        transStatement statement2 env'
 
-transPrintStatement :: PrintStatement -> VEnv -> PEnv -> IO (VEnv, PEnv)
-transPrintStatement x env penv = case x of
+transPrintStatement :: PrintStatement -> GEnv -> IO GEnv
+transPrintStatement x env = case x of
   PrintStmnt expression -> do
-    (val, env', penv') <- transExpression expression env penv
+    (val, env') <- transExpression expression env
     print val
-    return (env', penv')
+    return (env')
 
-compareExpressions :: SimpleExpression -> SimpleExpression -> VEnv -> PEnv -> (Value -> Value -> Bool) -> IO (Value, VEnv, PEnv)
-compareExpressions simExp1 simExp2 env penv comparer = do
-  (val1, env', penv') <- transSimpleExpression simExp1 env penv
-  (val2, env'', penv'') <- transSimpleExpression simExp2 env' penv'
-  return (VBool(comparer val1 val2), env'', penv'')
+compareExpressions :: SimpleExpression -> SimpleExpression -> GEnv -> (Value -> Value -> Bool) -> IO (Value, GEnv)
+compareExpressions simExp1 simExp2 env comparer = do
+  (val1, env') <- transSimpleExpression simExp1 env
+  (val2, env'') <- transSimpleExpression simExp2 env'
+  return (VBool(comparer val1 val2), env'')
 
-transExpression :: Expression -> VEnv -> PEnv -> IO (Value, VEnv, PEnv)
-transExpression x env penv = case x of
-  ExpSimple simpleexpression -> transSimpleExpression simpleexpression env penv
-  ExpEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env penv (==))
-  ExpNotEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env penv (/=))
-  ExpLess simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env penv (<))
-  ExpLessOrEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env penv (<=))
-  ExpGreater simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env penv (>))
-  ExpGreaterOrEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env penv (>=))
+transExpression :: Expression -> GEnv -> IO (Value, GEnv)
+transExpression x env = case x of
+  ExpSimple simpleexpression -> transSimpleExpression simpleexpression env
+  ExpEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (==))
+  ExpNotEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (/=))
+  ExpLess simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (<))
+  ExpLessOrEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (<=))
+  ExpGreater simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (>))
+  ExpGreaterOrEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (>=))
 
-transSimpleExpression :: SimpleExpression -> VEnv -> PEnv -> IO (Value, VEnv, PEnv)
-transSimpleExpression x env penv = case x of
-  SimpleExpTerm term -> transTerm term env penv
+transSimpleExpression :: SimpleExpression -> GEnv -> IO (Value, GEnv)
+transSimpleExpression x env = case x of
+  SimpleExpTerm term -> transTerm term env
   SimpleExpAdd simpleexpression term -> do
-    (val1, env', penv') <- transSimpleExpression simpleexpression env penv
-    (val2, env'', penv'') <- transTerm term env' penv'
+    (val1, env') <- transSimpleExpression simpleexpression env
+    (val2, env'') <- transTerm term env'
     case (val1, val2) of
-        (VInt x, VInt y) -> return (VInt(x + y), env'', penv'')
+        (VInt x, VInt y) -> return (VInt(x + y), env'')
   SimpleExpSubst simpleexpression term -> do
-    (val1, env', penv') <- transSimpleExpression simpleexpression env penv
-    (val2, env'', penv'') <- transTerm term env' penv'
+    (val1, env') <- transSimpleExpression simpleexpression env
+    (val2, env'') <- transTerm term env'
     case (val1, val2) of
-        (VInt x, VInt y) -> return (VInt(x - y), env'', penv'')
+        (VInt x, VInt y) -> return (VInt(x - y), env'')
 
-transTerm :: Term -> VEnv -> PEnv -> IO (Value, VEnv, PEnv)
-transTerm x env penv = case x of
-  TermFactor factor -> transFactor factor env penv
+transTerm :: Term -> GEnv -> IO (Value, GEnv)
+transTerm x env = case x of
+  TermFactor factor -> transFactor factor env
   TermMultiply term factor -> do
-    (val1, env', penv') <- transTerm term env penv
-    (val2, env'', penv'') <- transFactor factor env' penv'
+    (val1, env') <- transTerm term env
+    (val2, env'') <- transFactor factor env'
     case (val1, val2) of
-        (VInt x, VInt y) -> return (VInt(x * y), env'', penv'')
+        (VInt x, VInt y) -> return (VInt(x * y), env'')
   TermDivide term factor -> do
-    (val1, env', penv') <- transTerm term env penv
-    (val2, env'', penv'') <- transFactor factor env' penv'
+    (val1, env') <- transTerm term env
+    (val2, env'') <- transFactor factor env'
     case (val1, val2) of
-        (VInt x, VInt y) -> if y /=0 then return (VInt(div x y), env'', penv'')
+        (VInt x, VInt y) -> if y /=0 then return (VInt(div x y), env'')
                             else error ("division by 0")
 
-transFactor :: Factor -> VEnv -> PEnv -> IO (Value, VEnv, PEnv)
-transFactor x env penv = case x of
-  FactorExpression expression -> transExpression expression env penv
-  FactorPlus factor -> transFactor factor env penv
+transFactor :: Factor -> GEnv -> IO (Value, GEnv)
+transFactor x env = case x of
+  FactorExpression expression -> transExpression expression env
+  FactorPlus factor -> transFactor factor env
   FactorMinus factor -> do
-    (val, env', penv') <- transFactor factor env penv
+    (val, env') <- transFactor factor env
     case val of
-        VInt x -> return(VInt(-x), env', penv')
+        VInt x -> return(VInt(-x), env')
   --FactorFunctionCall functioncall -> failure x
-  FactorConstant constant -> return (transConstant constant, env, penv)
+  FactorConstant constant -> return (transConstant constant, env)
   FactorIdent ident -> do
-    return (getVarVal env ident, env, penv)
+    return (getVarVal env ident, env)
   --FactorStoI expression -> failure x
   --FactorItoS expression -> failure x
 transFunctionCall :: FunctionCall -> Result
@@ -337,42 +343,47 @@ transBoolean x = case x of
   BoolFalse -> VBool(False)
 
 
--- VEnv helper functions
--- Add variable identifier to the environment with unspecified value.
-declareVar :: VEnv -> Ident -> VEnv
-declareVar env ident =
-  case Map.lookup ident env of
-    Nothing -> Map.insert ident VUndef env
+-- GEnv helper functions
+-- Add variable identifier to the most local environment with unspecified value.
+declareVar :: GEnv -> Ident -> GEnv
+declareVar ((localVEnv, lovalPEnv) : envs) ident =
+  case Map.lookup ident localVEnv of
+    Nothing -> ((Map.insert ident VUndef localVEnv, lovalPEnv) : envs)
     Just _ -> error("Variable " ++ show ident ++ " already declared")
 
--- Add a list of variable identifiers to the environment with unspecified value.
-declareVars :: VEnv -> [Ident] -> VEnv
+-- Add a list of variable identifiers to the most local environment with
+-- unspecified value.
+declareVars :: GEnv -> [Ident] -> GEnv
 declareVars env [] = env
 declareVars env (ident : idents) = declareVars (declareVar env ident) idents
 
 -- Set value of already declared variable with given identifier.
-setVarVal :: VEnv -> Ident -> Value -> VEnv
-setVarVal env ident val =
-  case Map.lookup ident env of
-    Nothing -> error("Variable " ++ show ident ++ " not defined")
-    Just _ -> Map.insert ident val env
+setVarVal :: GEnv -> Ident -> Value -> GEnv
+setVarVal [] ident val = error("Variable " ++ show ident ++ " not defined")
+setVarVal ((localVEnv, localPEnv) : envs) ident val =
+  case Map.lookup ident localVEnv of
+    Nothing -> ((localVEnv, localPEnv) : setVarVal envs ident val)
+    Just _ -> ((Map.insert ident val localVEnv, localPEnv) : envs)
 
 -- Get value of variable with given identifier.
-getVarVal :: VEnv -> Ident -> Value
-getVarVal env ident =
-  case Map.lookup ident env of
-    Nothing -> error("Variable " ++ show ident ++ " not defined")
+getVarVal :: GEnv -> Ident -> Value
+getVarVal [] ident = error("Variable " ++ show ident ++ " not defined")
+getVarVal ((localVEnv, lovalPEnv) : envs) ident =
+  case Map.lookup ident localVEnv of
+    Nothing -> getVarVal envs ident
     Just val -> val
 
--- PEnv helper functions
-setDecl :: PEnv -> Ident -> ProcDec -> PEnv
-setDecl penv ident procDec =
-  case Map.lookup ident penv of
-    Nothing -> Map.insert ident procDec penv
+-- Add function/procedure identifier to the most local environment.
+setDecl :: GEnv -> Ident -> ProcDec -> GEnv
+setDecl ((localVEnv, lovalPEnv) : envs) ident procDec =
+  case Map.lookup ident lovalPEnv of
+    Nothing -> ((localVEnv, Map.insert ident procDec lovalPEnv) : envs)
     Just _ -> error("Function/procedure " ++ show ident ++ " already defined")
 
-getDecl :: PEnv -> Ident -> ProcDec
-getDecl penv ident =
-  case Map.lookup ident penv of
-    Nothing -> error("Function/procedure " ++ show ident ++ " not defined")
+-- Get definition of function/procedure with given identifier.
+getDecl :: GEnv -> Ident -> ProcDec
+getDecl [] ident = error("Function/procedure " ++ show ident ++ " not defined")
+getDecl ((localVEnv, lovalPEnv) : envs) ident =
+  case Map.lookup ident lovalPEnv of
+    Nothing -> getDecl envs ident
     Just val -> val
