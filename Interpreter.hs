@@ -116,7 +116,7 @@ transStatement x env = case x of
   SAss assignmentstatement -> transAssignmentStatement assignmentstatement env
   --SProc procedurecall -> failure x
   SFor forstatement -> transForStatement forstatement env
-  --SWhile whilestatement -> failure x
+  SWhile whilestatement -> transWhileStatement whilestatement env
   --SIf ifstatement -> failure x
   SPrint printstatement -> transPrintStatement printstatement env
 
@@ -147,9 +147,16 @@ transForStatement x env = case x of
     (val2, env'') <- transExpression expression2 env'
     executeForStatement ident val2 statement $ setVarVal env ident val1
     
-transWhileStatement :: WhileStatement -> Result
-transWhileStatement x = case x of
-  WhileStmnt expression statement -> failure x
+transWhileStatement :: WhileStatement -> VEnv -> IO VEnv
+transWhileStatement x env = case x of
+  WhileStmnt expression statement -> do
+    (val, env') <- transExpression expression env
+    case val of
+      VBool(True) -> do
+        env'' <- transStatement statement env'
+        transWhileStatement x env''
+      VBool(False) -> return env'
+
 transIfStatement :: IfStatement -> Result
 transIfStatement x = case x of
   IfStmnt expression statement -> failure x

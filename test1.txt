@@ -17,4 +17,10 @@ begin
 end;
 print(b);
 print(l);
+
+print(i);
+print(k);
+while i > k do
+    i := i - 1;
+print(i);
 end.
