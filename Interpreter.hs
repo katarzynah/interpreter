@@ -463,13 +463,13 @@ _setValueInArray array [] _ =
 _setValueInArray array (x:[]) val =
   case array of
     VArray sequen ->
-      if x >= length sequen then error ("Index out of bounds") else
+      if x >= Seq.length sequen then error ("Index out of bounds") else
       VArray (Seq.update x val sequen)
     _ -> error "Wrong number of dimensions provided"
 _setValueInArray array (x:xs) val =
   case array of
     VArray sequen -> 
-      if x >= length sequen then error ("Index out of bounds") else
+      if x >= Seq.length sequen then error ("Index out of bounds") else
       VArray (Seq.update x newValue sequen) where
         newValue =_setValueInArray (Seq.index sequen x) xs val
 
@@ -489,7 +489,7 @@ _getValueToFetch :: Value -> [Int] -> Value
 _getValueToFetch val [] = val
 _getValueToFetch val (dim : dims) = case val of
   VArray values -> 
-    if dim >= length values then error ("Index out of bounds") else
+    if dim >= Seq.length values then error ("Index out of bounds") else
     _getValueToFetch (Seq.index values dim) dims
   _ -> error ("Wrong number of dimensions provided!")
 
