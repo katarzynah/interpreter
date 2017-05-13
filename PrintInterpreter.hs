@@ -231,6 +231,7 @@ instance Print Actuals where
 instance Print ExpressionList where
   prt i e = case e of
     ExpListEmpty -> prPrec i 0 (concatD [])
+    ExpListOne expression -> prPrec i 0 (concatD [prt 0 expression])
     ExpList expression expressionlist -> prPrec i 0 (concatD [prt 0 expression, doc (showString ","), prt 0 expressionlist])
 
 instance Print IdList where

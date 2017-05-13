@@ -91,6 +91,7 @@ FunsCall. FunctionCall ::= Ident Actuals ;
 Act. Actuals ::= "(" ExpressionList ")" ;
 
 ExpListEmpty. ExpressionList ::= ;
+ExpListOne.   ExpressionList ::= Expression ;
 ExpList.      ExpressionList ::= Expression "," ExpressionList ;
 
 IdLEnd. IdList ::= Ident ;

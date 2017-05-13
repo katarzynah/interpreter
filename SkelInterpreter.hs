@@ -132,6 +132,7 @@ transActuals x = case x of
 transExpressionList :: ExpressionList -> Result
 transExpressionList x = case x of
   ExpListEmpty -> failure x
+  ExpListOne expression -> failure x
   ExpList expression expressionlist -> failure x
 transIdList :: IdList -> Result
 transIdList x = case x of

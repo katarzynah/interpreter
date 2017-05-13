@@ -375,6 +375,7 @@ transActuals x = case x of
 transExpressionList :: ExpressionList -> [Expression]
 transExpressionList x = case x of
   ExpListEmpty -> []
+  ExpListOne expression -> [expression]
   ExpList expression expressionList ->
     [expression] ++ transExpressionList expressionList
 

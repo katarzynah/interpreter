@@ -117,6 +117,7 @@ All other symbols are terminals.
   | //FunctionCall// | -> | //Ident// //Actuals// 
   | //Actuals// | -> | ``(`` //ExpressionList// ``)`` 
   | //ExpressionList// | -> | **eps**
+  |  |  **|**  | //Expression// 
   |  |  **|**  | //Expression// ``,`` //ExpressionList// 
   | //IdList// | -> | //Ident// 
   |  |  **|**  | //Ident// ``,`` //IdList// 

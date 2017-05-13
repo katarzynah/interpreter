@@ -192,6 +192,7 @@ Actuals :: { Actuals }
 Actuals : '(' ExpressionList ')' { AbsInterpreter.Act $2 }
 ExpressionList :: { ExpressionList }
 ExpressionList : {- empty -} { AbsInterpreter.ExpListEmpty }
+               | Expression { AbsInterpreter.ExpListOne $1 }
                | Expression ',' ExpressionList { AbsInterpreter.ExpList $1 $3 }
 IdList :: { IdList }
 IdList : Ident { AbsInterpreter.IdLEnd $1 }

@@ -133,7 +133,9 @@ data Actuals = Act ExpressionList
   deriving (Eq, Ord, Show, Read)
 
 data ExpressionList
-    = ExpListEmpty | ExpList Expression ExpressionList
+    = ExpListEmpty
+    | ExpListOne Expression
+    | ExpList Expression ExpressionList
   deriving (Eq, Ord, Show, Read)
 
 data IdList = IdLEnd Ident | IdL Ident IdList
