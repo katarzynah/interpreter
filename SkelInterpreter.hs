@@ -119,6 +119,7 @@ transFactor x = case x of
   FactorFunctionCall functioncall -> failure x
   FactorConstant constant -> failure x
   FactorIdent ident -> failure x
+  FactorArray ident expressionlist -> failure x
   FactorStoI expression -> failure x
   FactorItoS expression -> failure x
 transFunctionCall :: FunctionCall -> Result
@@ -143,12 +144,8 @@ transTypeSpecifier x = case x of
   TypeSpecArray dimensionlist typespecifier -> failure x
 transDimensionList :: DimensionList -> Result
 transDimensionList x = case x of
-  DimListEnd dimension -> failure x
-  DimList dimension dimensionlist -> failure x
-transDimension :: Dimension -> Result
-transDimension x = case x of
-  DimId ident -> failure x
-  DimConst constant -> failure x
+  DimListEnd integer -> failure x
+  DimList integer dimensionlist -> failure x
 transConstant :: Constant -> Result
 transConstant x = case x of
   ConstInt integer -> failure x

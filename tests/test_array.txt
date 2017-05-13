@@ -1,0 +1,9 @@
+program f;
+
+var x: array [3,2,5] of int;
+
+begin
+
+print(x[0,]);
+
+end.

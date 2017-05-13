@@ -40,7 +40,6 @@ import ErrM
 %name pIdList IdList
 %name pTypeSpecifier TypeSpecifier
 %name pDimensionList DimensionList
-%name pDimension Dimension
 %name pConstant Constant
 %name pBoolean Boolean
 -- no lexer declaration
@@ -183,6 +182,7 @@ Factor : '(' Expression ')' { AbsInterpreter.FactorExpression $2 }
        | FunctionCall { AbsInterpreter.FactorFunctionCall $1 }
        | Constant { AbsInterpreter.FactorConstant $1 }
        | Ident { AbsInterpreter.FactorIdent $1 }
+       | Ident '[' ExpressionList ']' { AbsInterpreter.FactorArray $1 $3 }
        | 'string_to_int' '(' Expression ')' { AbsInterpreter.FactorStoI $3 }
        | 'int_to_string' '(' Expression ')' { AbsInterpreter.FactorItoS $3 }
 FunctionCall :: { FunctionCall }
@@ -201,11 +201,8 @@ TypeSpecifier : 'int' { AbsInterpreter.TypeSpecInt }
               | 'string' { AbsInterpreter.TypeSpecString }
               | 'array' '[' DimensionList ']' 'of' TypeSpecifier { AbsInterpreter.TypeSpecArray $3 $6 }
 DimensionList :: { DimensionList }
-DimensionList : Dimension { AbsInterpreter.DimListEnd $1 }
-              | Dimension ',' DimensionList { AbsInterpreter.DimList $1 $3 }
-Dimension :: { Dimension }
-Dimension : Ident { AbsInterpreter.DimId $1 }
-          | Constant { AbsInterpreter.DimConst $1 }
+DimensionList : Integer { AbsInterpreter.DimListEnd $1 }
+              | Integer ',' DimensionList { AbsInterpreter.DimList $1 $3 }
 Constant :: { Constant }
 Constant : Integer { AbsInterpreter.ConstInt $1 }
          | Boolean { AbsInterpreter.ConstBool $1 }

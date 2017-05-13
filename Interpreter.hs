@@ -4,25 +4,25 @@ import qualified Data.Map as Map
 
 import AbsInterpreter
 import ErrM
-type Result = Err String
 
-data Value = VInt Integer | VBool Bool | VString String | VUndef
+data Value = VInt Integer | VBool Bool | VStr String | VArray [Value] | VNull
 
 instance Show Value where
-    show (VInt val)       = show val
-    show (VBool val)      = show val
-    show (VString val)    = show val
-    show VUndef         = "undefined"
+    show (VInt val) = show val
+    show (VBool val) = show val
+    show (VStr val) = show val
+    show (VArray val) = show val
+    show VNull = "undefined"
 
 instance Eq Value where
     (VInt val1) == (VInt val2) = val1 == val2
     (VBool val1) == (VBool val2) = val1 == val2
-    (VString val1) == (VString val2) = val1 == val2
+    (VStr val1) == (VStr val2) = val1 == val2
 
 instance Ord Value where
     compare (VInt val1) (VInt val2) = compare val1 val2
     compare (VBool val1) (VBool val2) = compare val1 val2
-    compare (VString val1) (VString val2) = compare val1 val2
+    compare (VStr val1) (VStr val2) = compare val1 val2
 
 -- Type mapping variable identificators to their values.
 type VEnv = Map.Map Ident Value
@@ -44,9 +44,6 @@ emptyEnv = (Map.empty, Map.empty)
 emptyGEnv :: GEnv
 emptyGEnv = [emptyEnv]
 
-failure :: Show a => a -> Result
-failure x = Bad $ "Undefined case: " ++ show x
-
 transProgram :: Program -> IO()
 transProgram x = case x of
   Prog programheader declarations compoundstatement -> do
@@ -54,10 +51,6 @@ transProgram x = case x of
     print env --TODO: used in tests!!! but remove before turning in
     env' <- transCompoundStatement compoundstatement env
     return ()
-
-transProgramHeader :: ProgramHeader -> Result
-transProgramHeader x = case x of
-  ProgHead ident -> failure x
 
 transDeclarations :: Declarations -> GEnv -> IO GEnv
 transDeclarations x env = case x of
@@ -85,15 +78,20 @@ transVariableDeclarationList x env = case x of
 
 transVarDec :: VarDec -> GEnv -> IO GEnv
 transVarDec x env = case x of
-  VarDecLabel idlist typespecifier ->
-    return (declareVars env (transIdList idlist))
+  VarDecLabel idlist typespecifier -> do
+    let dimensions = transTypeSpecifier typespecifier
+    return (declareVars env (transIdList idlist) dimensions)
+    --case dimensions of
+    --  [] -> return (declareVars env (transIdList idlist))
+    --  _ -> return (declareArrays env (transIdList idlist) dimensions)
     
 transProcedureDeclarations :: ProcedureDeclarations -> GEnv -> IO GEnv
 transProcedureDeclarations x env = case x of
   ProcDecEmpty -> return env
   ProcDecLabel procdec proceduredeclarations -> do
     env' <- transProcDec procdec env
-    transProcedureDeclarations proceduredeclarations env'
+    env'' <- transProcedureDeclarations proceduredeclarations env'
+    return env''
 
 -- Gets identifier from procedure/function declaration.
 getProcDecIdent :: ProcDec -> Ident
@@ -104,9 +102,11 @@ getProcDecIdent (ProcDecFun (FunHead id _ _) _ _) = id
 transProcDec :: ProcDec -> GEnv -> IO GEnv
 transProcDec x env = case x of
   ProcDecProc procheader declarations compoundstatement -> do
-    return(setDecl env (getProcDecIdent x) x)
+    let env' = setDecl env (getProcDecIdent x) x
+    return env'
   ProcDecFun funcheader declarations compoundstatement -> do
-    return(setDecl env (getProcDecIdent x) x)
+    let env' = setDecl env (getProcDecIdent x) x
+    return env'
 
 transProcHeader :: ProcHeader -> [Ident]
 transProcHeader x = case x of
@@ -129,6 +129,7 @@ transArg :: Arg -> [Ident]
 transArg x = case x of
   ArgLabel idlist typespecifier -> transIdList idlist
 
+-- TODO(Kasia): Add variable declarations in blacks?
 transCompoundStatement :: CompoundStatement -> GEnv -> IO GEnv
 transCompoundStatement x env = case x of
   CompStmnt statementlist -> transStatementList statementlist env
@@ -138,7 +139,8 @@ transStatementList x env = case x of
   StmntListEmpty -> return env
   StmntList statement statementlist -> do
     env' <- transStatement statement env
-    transStatementList statementlist env'
+    env'' <- transStatementList statementlist env'
+    return env''
 
 transStatement :: Statement -> GEnv -> IO GEnv
 transStatement x env = case x of
@@ -155,7 +157,8 @@ transAssignmentStatement :: AssignmentStatement -> GEnv -> IO GEnv
 transAssignmentStatement x env = case x of
   AssStmnt ident expression -> do
     (value, env') <- transExpression expression env
-    return (setVarVal env' ident value)
+    let env'' = setVarVal env' ident value
+    return env''
 
 _evaluateArguments :: [Expression] -> GEnv -> [Value] -> IO([Value], GEnv)
 _evaluateArguments [] env values = do
@@ -181,14 +184,14 @@ transProcedureCall x env = case x of
           -- adding a new local environment to our environments
           let newEnv = ((emptyEnv) : env')
           -- declaring procedure arguments in the environment
-          let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents
+          let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents [] -- TODO: fix
           -- setting the values of arguments in the environment
           let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
           -- adding local variable declarations
           newEnvWithArgsAndVars <- transDeclarations declarations newEnvWithArgs
           finalEnv <- transCompoundStatement compoundstatement newEnvWithArgsAndVars
           case finalEnv of
-            (localEnv : env) -> do return(env)
+            (localEnv : env) -> do return env
 
 transFunctionCall :: FunctionCall -> GEnv -> IO (Value, GEnv)
 transFunctionCall x env = case x of
@@ -199,16 +202,19 @@ transFunctionCall x env = case x of
     case funcDec of
       (ProcDecFun funcheader declarations compoundstatement) -> do
         let argumentIdents = transFuncHeader funcheader
-        if (length values) /= (length argumentIdents) then error ("Wrong number of arguments")
+        if (length values) /= (length argumentIdents) then
+          error ("Wrong number of arguments")
         else do
           let newEnv = ((emptyEnv) : env')
-          let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents
+          let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents [] -- TODO: fix
           let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
           newEnvWithArgsAndVars <- transDeclarations declarations newEnvWithArgs
-          let newEnvWithResult = declareVar newEnvWithArgsAndVars ident
+          let newEnvWithResult = declareVar newEnvWithArgsAndVars ident []
           finalEnv <- transCompoundStatement compoundstatement newEnvWithResult
           case finalEnv of
-            (localEnv : env) -> do return(getVarVal finalEnv ident, env)
+            (localEnv : env) -> do
+              let val = getVarVal finalEnv ident
+              return (val, env)
       _ -> error ("Procedures don't return values")
 
 executeForStatement :: Ident -> Value -> Statement -> GEnv -> IO GEnv
@@ -219,7 +225,8 @@ executeForStatement ident endValue statement env = do
       if i > endValue then return env
       else do
         env' <- transStatement statement env
-        executeForStatement ident endValue statement $ setVarVal env' ident (VInt(x+1))
+        let env'' = setVarVal env' ident (VInt(x+1))
+        executeForStatement ident endValue statement env''
     _ -> error ("For statement can only be used with expressions that evaluate to integers")
 
 transForStatement :: ForStatement -> GEnv -> IO GEnv
@@ -227,7 +234,8 @@ transForStatement x env = case x of
   ForStmnt ident expression1 expression2 statement -> do
     (val1, env') <- transExpression expression1 env
     (val2, env'') <- transExpression expression2 env'
-    executeForStatement ident val2 statement $ setVarVal env'' ident val1
+    let env''' = setVarVal env'' ident val1
+    executeForStatement ident val2 statement env'''
     
 transWhileStatement :: WhileStatement -> GEnv -> IO GEnv
 transWhileStatement x env = case x of
@@ -273,29 +281,36 @@ compareExpressions simExp1 simExp2 env comparer = do
 
 transExpression :: Expression -> GEnv -> IO (Value, GEnv)
 transExpression x env = case x of
-  ExpSimple simpleexpression -> transSimpleExpression simpleexpression env
-  ExpEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (==))
-  ExpNotEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (/=))
-  ExpLess simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (<))
-  ExpLessOrEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (<=))
-  ExpGreater simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (>))
-  ExpGreaterOrEqual simpleexpression1 simpleexpression2 -> (compareExpressions simpleexpression1 simpleexpression2 env (>=))
+  ExpSimple simpleexpression ->
+    transSimpleExpression simpleexpression env
+  ExpEqual simpleexpression1 simpleexpression2 ->
+    (compareExpressions simpleexpression1 simpleexpression2 env (==))
+  ExpNotEqual simpleexpression1 simpleexpression2 ->
+    (compareExpressions simpleexpression1 simpleexpression2 env (/=))
+  ExpLess simpleexpression1 simpleexpression2 ->
+    (compareExpressions simpleexpression1 simpleexpression2 env (<))
+  ExpLessOrEqual simpleexpression1 simpleexpression2 ->
+    (compareExpressions simpleexpression1 simpleexpression2 env (<=))
+  ExpGreater simpleexpression1 simpleexpression2 ->
+    (compareExpressions simpleexpression1 simpleexpression2 env (>))
+  ExpGreaterOrEqual simpleexpression1 simpleexpression2 ->
+    (compareExpressions simpleexpression1 simpleexpression2 env (>=))
+
+computeSimpleExpression :: SimpleExpression -> Term -> (Integer -> Integer -> Integer) -> GEnv -> IO (Value, GEnv)
+computeSimpleExpression simpExpr term fun env = do
+  (val1, env') <- transSimpleExpression simpExpr env
+  (val2, env'') <- transTerm term env'
+  case (val1, val2) of
+      (VInt x, VInt y) -> return (VInt(fun x y), env'')
+      _ -> error ("Can only add/substract integers")
 
 transSimpleExpression :: SimpleExpression -> GEnv -> IO (Value, GEnv)
 transSimpleExpression x env = case x of
   SimpleExpTerm term -> transTerm term env
-  SimpleExpAdd simpleexpression term -> do
-    (val1, env') <- transSimpleExpression simpleexpression env
-    (val2, env'') <- transTerm term env'
-    case (val1, val2) of
-        (VInt x, VInt y) -> return (VInt(x + y), env'')
-        _ -> error ("Can only add integers")
+  SimpleExpAdd simpleexpression term ->
+    computeSimpleExpression simpleexpression term (+) env
   SimpleExpSubst simpleexpression term -> do
-    (val1, env') <- transSimpleExpression simpleexpression env
-    (val2, env'') <- transTerm term env'
-    case (val1, val2) of
-        (VInt x, VInt y) -> return (VInt(x - y), env'')
-        _ -> error ("Can only substract integers")
+    computeSimpleExpression simpleexpression term (-) env
 
 transTerm :: Term -> GEnv -> IO (Value, GEnv)
 transTerm x env = case x of
@@ -314,32 +329,32 @@ transTerm x env = case x of
                             else error ("Can't divide by 0")
         _ -> error ("Can only divide integers")
 
+computeTransFactor :: Factor -> Integer -> GEnv -> IO (Value, GEnv)
+computeTransFactor factor int env = do
+  (val, env') <- transFactor factor env
+  case val of
+      VInt x -> return(VInt(int * x), env')
+      _ -> error ("Can only add '+'/'-' before integers")
+
 transFactor :: Factor -> GEnv -> IO (Value, GEnv)
 transFactor x env = case x of
   FactorExpression expression -> transExpression expression env
-  FactorPlus factor -> do
-    (val, env') <- transFactor factor env
-    case val of
-        VInt x -> return(VInt(x), env')
-        _ -> error ("Can only add '+' before integers")
-  FactorMinus factor -> do
-    (val, env') <- transFactor factor env
-    case val of
-        VInt x -> return(VInt(-x), env')
-        _ -> error ("Can only add '-' before integers")
+  FactorPlus factor -> computeTransFactor factor 1 env
+  FactorMinus factor -> computeTransFactor factor (-1) env
   FactorFunctionCall functioncall -> transFunctionCall functioncall env
   FactorConstant constant -> return (transConstant constant, env)
   FactorIdent ident -> do
     return (getVarVal env ident, env)
+  FactorArray ident expressionlist -> return (VInt(0), env)
   FactorStoI expression -> do
     (val, env') <- transExpression expression env
     case val of
-      (VString str) -> return (VInt(read str :: Integer), env')
+      (VStr str) -> return (VInt(read str :: Integer), env')
       _ -> error ("Can only use 'string_to_int' on strings")
   FactorItoS expression -> do
     (val, env') <- transExpression expression env
     case val of
-      (VInt val) -> return (VString(show val), env')
+      (VInt val) -> return (VStr(show val), env')
       _ -> error ("Can only use 'int_to_string' on integers")
 
 transActuals :: Actuals -> [Expression]
@@ -356,32 +371,24 @@ transIdList x = case x of
   IdLEnd ident -> [ident]
   IdL ident idlist -> [ident] ++ transIdList idlist
 
-transIdent :: Ident -> Result
-transIdent x = case x of
-  Ident string -> failure x
-
-transTypeSpecifier :: TypeSpecifier -> Result
+transTypeSpecifier :: TypeSpecifier -> [Integer]
 transTypeSpecifier x = case x of
-  TypeSpecInt -> failure x
-  TypeSpecBool -> failure x
-  TypeSpecString -> failure x
-  TypeSpecArray dimensionlist typespecifier -> failure x
+  TypeSpecInt -> []
+  TypeSpecBool -> []
+  TypeSpecString -> []
+  TypeSpecArray dimensionlist typespecifier ->
+    transDimensionList dimensionlist ++ transTypeSpecifier typespecifier
 
-transDimensionList :: DimensionList -> Result
+transDimensionList :: DimensionList -> [Integer]
 transDimensionList x = case x of
-  DimListEnd dimension -> failure x
-  DimList dimension dimensionlist -> failure x
-
-transDimension :: Dimension -> Result
-transDimension x = case x of
-  DimId ident -> failure x
-  DimConst constant -> failure x
+  DimListEnd integer -> [integer]
+  DimList integer dimensionlist -> (integer : transDimensionList dimensionlist)
 
 transConstant :: Constant -> Value
 transConstant x = case x of
   ConstInt integer -> VInt integer
   ConstBool boolean -> transBoolean boolean
-  ConstString string -> VString string
+  ConstString string -> VStr string
 
 transBoolean :: Boolean -> Value
 transBoolean x = case x of
@@ -391,18 +398,28 @@ transBoolean x = case x of
 
 -- GEnv helper functions
 
+_getArrayOfValues :: Integer -> Value -> Value
+_getArrayOfValues n val | n <= 0 = error ("Array dimensions must be positive integers")
+                        | otherwise = VArray (take (fromInteger n) (repeat val))
+
+getValue :: [Integer] -> Value
+getValue [] = VNull
+getValue (int : ints) = _getArrayOfValues int (getValue ints)
+
 -- Add variable identifier to the most local environment with unspecified value.
-declareVar :: GEnv -> Ident -> GEnv
-declareVar ((localVEnv, lovalPEnv) : envs) ident =
+declareVar :: GEnv -> Ident -> [Integer] -> GEnv
+declareVar ((localVEnv, localPEnv) : envs) ident dims =
   case Map.lookup ident localVEnv of
-    Nothing -> ((Map.insert ident VUndef localVEnv, lovalPEnv) : envs)
+    Nothing -> ((Map.insert ident value localVEnv, localPEnv) : envs) where
+      value = getValue dims
     Just _ -> error("Variable " ++ show ident ++ " already declared")
 
 -- Add a list of variable identifiers to the most local environment with
 -- unspecified value.
-declareVars :: GEnv -> [Ident] -> GEnv
-declareVars env [] = env
-declareVars env (ident : idents) = declareVars (declareVar env ident) idents
+declareVars :: GEnv -> [Ident] -> [Integer] -> GEnv
+declareVars env [] _ = env
+declareVars env (ident : idents) dims =
+  declareVars (declareVar env ident dims) idents dims
 
 -- Set value of already declared variable with given identifier.
 setVarVal :: GEnv -> Ident -> Value -> GEnv
@@ -421,22 +438,22 @@ setVarsVals env (ident : idents) (val : vals) =
 -- Get value of variable with given identifier.
 getVarVal :: GEnv -> Ident -> Value
 getVarVal [] ident = error("Variable " ++ show ident ++ " not defined")
-getVarVal ((localVEnv, lovalPEnv) : envs) ident =
+getVarVal ((localVEnv, _) : envs) ident =
   case Map.lookup ident localVEnv of
     Nothing -> getVarVal envs ident
     Just val -> val
 
 -- Add function/procedure identifier to the most local environment.
 setDecl :: GEnv -> Ident -> ProcDec -> GEnv
-setDecl ((localVEnv, lovalPEnv) : envs) ident procDec =
-  case Map.lookup ident lovalPEnv of
-    Nothing -> ((localVEnv, Map.insert ident procDec lovalPEnv) : envs)
+setDecl ((localVEnv, localPEnv) : envs) ident procDec =
+  case Map.lookup ident localPEnv of
+    Nothing -> ((localVEnv, Map.insert ident procDec localPEnv) : envs)
     Just _ -> error("Function/procedure " ++ show ident ++ " already defined")
 
 -- Get definition of function/procedure with given identifier.
 getDecl :: GEnv -> Ident -> ProcDec
 getDecl [] ident = error("Function/procedure " ++ show ident ++ " not defined")
-getDecl ((localVEnv, lovalPEnv) : envs) ident =
-  case Map.lookup ident lovalPEnv of
+getDecl ((_, localPEnv) : envs) ident =
+  case Map.lookup ident localPEnv of
     Nothing -> getDecl envs ident
     Just val -> val

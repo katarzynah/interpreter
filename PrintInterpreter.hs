@@ -215,6 +215,7 @@ instance Print Factor where
     FactorFunctionCall functioncall -> prPrec i 0 (concatD [prt 0 functioncall])
     FactorConstant constant -> prPrec i 0 (concatD [prt 0 constant])
     FactorIdent id -> prPrec i 0 (concatD [prt 0 id])
+    FactorArray id expressionlist -> prPrec i 0 (concatD [prt 0 id, doc (showString "["), prt 0 expressionlist, doc (showString "]")])
     FactorStoI expression -> prPrec i 0 (concatD [doc (showString "string_to_int"), doc (showString "("), prt 0 expression, doc (showString ")")])
     FactorItoS expression -> prPrec i 0 (concatD [doc (showString "int_to_string"), doc (showString "("), prt 0 expression, doc (showString ")")])
 
@@ -245,13 +246,8 @@ instance Print TypeSpecifier where
 
 instance Print DimensionList where
   prt i e = case e of
-    DimListEnd dimension -> prPrec i 0 (concatD [prt 0 dimension])
-    DimList dimension dimensionlist -> prPrec i 0 (concatD [prt 0 dimension, doc (showString ","), prt 0 dimensionlist])
-
-instance Print Dimension where
-  prt i e = case e of
-    DimId id -> prPrec i 0 (concatD [prt 0 id])
-    DimConst constant -> prPrec i 0 (concatD [prt 0 constant])
+    DimListEnd n -> prPrec i 0 (concatD [prt 0 n])
+    DimList n dimensionlist -> prPrec i 0 (concatD [prt 0 n, doc (showString ","), prt 0 dimensionlist])
 
 instance Print Constant where
   prt i e = case e of

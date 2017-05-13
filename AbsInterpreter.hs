@@ -119,6 +119,7 @@ data Factor
     | FactorFunctionCall FunctionCall
     | FactorConstant Constant
     | FactorIdent Ident
+    | FactorArray Ident ExpressionList
     | FactorStoI Expression
     | FactorItoS Expression
   deriving (Eq, Ord, Show, Read)
@@ -144,10 +145,7 @@ data TypeSpecifier
   deriving (Eq, Ord, Show, Read)
 
 data DimensionList
-    = DimListEnd Dimension | DimList Dimension DimensionList
-  deriving (Eq, Ord, Show, Read)
-
-data Dimension = DimId Ident | DimConst Constant
+    = DimListEnd Integer | DimList Integer DimensionList
   deriving (Eq, Ord, Show, Read)
 
 data Constant

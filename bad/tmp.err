@@ -1,3 +1,3 @@
 Interpret: Variable Ident "a" not defined
 CallStack (from HasCallStack):
-  error, called at ./Interpreter.hs:424:22 in main:Interpreter
+  error, called at ./Interpreter.hs:446:22 in main:Interpreter

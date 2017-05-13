@@ -81,6 +81,7 @@ FactorMinus.        Factor ::= "-" Factor ;
 FactorFunctionCall. Factor ::= FunctionCall ;
 FactorConstant.     Factor ::= Constant ;
 FactorIdent.        Factor ::= Ident ;
+FactorArray.        Factor ::= Ident "[" ExpressionList "]" ;
 FactorStoI.         Factor ::= "string_to_int" "(" Expression ")";
 FactorItoS.         Factor ::= "int_to_string" "(" Expression ")";
 
@@ -99,11 +100,8 @@ TypeSpecBool.   TypeSpecifier ::= "bool" ;
 TypeSpecString. TypeSpecifier ::= "string" ;
 TypeSpecArray.  TypeSpecifier ::= "array" "[" DimensionList "]" "of" TypeSpecifier ;
 
-DimListEnd. DimensionList ::= Dimension ;
-DimList.    DimensionList ::= Dimension "," DimensionList ;
-
-DimId.    Dimension ::= Ident ;
-DimConst. Dimension ::= Constant ;
+DimListEnd. DimensionList ::= Integer ;
+DimList.    DimensionList ::= Integer "," DimensionList ;
 
 ConstInt.    Constant ::= Integer ;
 ConstBool.   Constant ::= Boolean ;
