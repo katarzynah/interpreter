@@ -194,7 +194,6 @@ transProcedureCall x env = case x of
           -- declaring procedure arguments in the environment
           let newEnvWithUndefinedArgs = declareArguments newEnv argumentIdentsWithDims
           -- setting the values of arguments in the environment
-          print newEnvWithUndefinedArgs
           let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
           -- adding local variable declarations
           newEnvWithArgsAndVars <- transDeclarations declarations newEnvWithArgs
@@ -349,6 +348,12 @@ computeTransFactor factor int env = do
       VInt x -> return(VInt(int * x), env')
       _ -> error ("Can only add '+'/'-' before integers")
 
+checkIfValuesInt :: [Value] -> [Integer]
+checkIfValuesInt [] = []
+checkIfValuesInt (val : vals) = case val of
+  VInt int -> (int : checkIfValuesInt vals)
+  _ -> error ("Arrays are indexed only by ints.")
+
 transFactor :: Factor -> GEnv -> IO (Value, GEnv)
 transFactor x env = case x of
   FactorExpression expression -> transExpression expression env
@@ -356,9 +361,12 @@ transFactor x env = case x of
   FactorMinus factor -> computeTransFactor factor (-1) env
   FactorFunctionCall functionCall -> transFunctionCall functionCall env
   FactorConstant constant -> return (transConstant constant, env)
-  FactorIdent ident -> do
-    return (getVarVal env ident, env)
-  FactorArray ident expressionList -> return (VInt(0), env)
+  FactorIdent ident -> return (getVarVal env ident, env)
+  FactorArray ident expressionList -> do
+    let expressions = transExpressionList expressionList
+    (values, env') <- evaluateArguments expressions env
+    let checkedValues = checkIfValuesInt values
+    return (getArrayVal env' ident checkedValues, env')
   FactorStoI expression -> do
     (val, env') <- transExpression expression env
     case val of
@@ -455,6 +463,12 @@ setVarsVals env [] _ = env
 setVarsVals env (ident : idents) (val : vals) =
   setVarsVals (setVarVal env ident val) idents vals
 
+_getValueToFetch :: Value -> [Integer] -> Value
+_getValueToFetch val [] = val
+_getValueToFetch val (dim : dims) = case val of
+  VArray values -> _getValueToFetch (values!!(fromInteger dim)) dims
+  _ -> error ("Wrong number of dimensions provided!")
+
 -- Get value of variable with given identifier.
 getVarVal :: GEnv -> Ident -> Value
 getVarVal [] ident = error("Variable " ++ show ident ++ " not defined")
@@ -462,6 +476,13 @@ getVarVal ((localVEnv, _) : envs) ident =
   case Map.lookup ident localVEnv of
     Nothing -> getVarVal envs ident
     Just val -> val
+
+getArrayVal :: GEnv -> Ident -> [Integer] -> Value
+getArrayVal [] ident _ = error("Variable " ++ show ident ++ " not defined")
+getArrayVal ((localVEnv, _) : envs) ident dims =
+  case Map.lookup ident localVEnv of
+    Nothing -> getVarVal envs ident
+    Just val -> _getValueToFetch val dims
 
 -- Add function/procedure identifier to the most local environment.
 setDecl :: GEnv -> Ident -> ProcDec -> GEnv
