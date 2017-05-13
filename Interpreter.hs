@@ -101,7 +101,7 @@ evaluateArguments exprs env = _evaluateArguments exprs env []
 setUpProcEnv :: [Ident] -> [Value] -> Declarations -> GEnv -> IO GEnv
 setUpProcEnv idents values declarations env = do
   if (length values) /= (length idents) then
-    error ("Wrong number of arguments")
+    error ("Wrong number of arguments.")
   else do
     -- adding a new local environment to our environments
     let newEnv = (emptyEnv : env)
@@ -152,9 +152,8 @@ transFunctionCall x env = case x of
         finalEnv <- transCompoundStatement compoundStmnt env''
         let val = getVarVal finalEnv ident
         case finalEnv of
-          (localEnv : env) -> do
-            return (val, env)
-      _ -> error ("Procedures don't return values")
+          (localEnv : env) -> return (val, env)
+      _ -> error ("Procedures don't return values.")
 
 -- Executes the for loop, ident is the identyficator of the counter variable,
 -- endValue is the value which causes the loop to finish when counter reaches
@@ -170,7 +169,7 @@ executeForStatement ident endValue statement env = do
         let env'' = setVarVal env' ident (VInt(x + 1))
         executeForStatement ident endValue statement env''
     _ -> error ("For statement can only be used with expressions that " ++
-                "evaluate to integers")
+                "evaluate to integers.")
 
 transForStatement :: ForStatement -> GEnv -> IO GEnv
 transForStatement x env = case x of
@@ -190,7 +189,7 @@ transWhileStatement x env = case x of
         transWhileStatement x env''
       VBool(False) -> return env'
       _ -> error ("While statement can only be used with expressions that " ++
-                  "evaluate to boolean values")
+                  "evaluate to boolean values.")
 
 transIfStatement :: IfStatement -> GEnv -> IO GEnv
 transIfStatement x env = case x of
@@ -201,7 +200,7 @@ transIfStatement x env = case x of
         transStatement statement env'
       VBool(False) -> return env'
       _ -> error ("If statement can only be used with expressions that " ++
-                  "evaluate to boolean values")
+                  "evaluate to boolean values.")
   IfStmntWithElse expression statement1 statement2 -> do
     (val, env') <- transExpression expression env
     case val of
@@ -210,7 +209,7 @@ transIfStatement x env = case x of
       VBool(False) -> do
         transStatement statement2 env'
       _ -> error ("If statement can only be used with expressions that " ++
-                  "evaluate to boolean values")
+                  "evaluate to boolean values.")
 
 transPrintStatement :: PrintStatement -> GEnv -> IO GEnv
 transPrintStatement x env = case x of
@@ -273,14 +272,14 @@ transTerm x env = case x of
     (val2, env'') <- transFactor factor env'
     case (val1, val2) of
         (VInt x, VInt y) -> return (VInt(x * y), env'')
-        _ -> error ("Can only multipy integers")
+        _ -> error ("Can only multipy integers.")
   TermDivide term factor -> do
     (val1, env') <- transTerm term env
     (val2, env'') <- transFactor factor env'
     case (val1, val2) of
         (VInt x, VInt y) -> if y /=0 then return (VInt(div x y), env'')
-                            else error ("Can't divide by 0")
-        _ -> error ("Can only divide integers")
+                            else error ("Can't divide by 0.")
+        _ -> error ("Can only divide integers.")
 
 
 -- Given factor, int and environment, evaluates the factor and returns its value
@@ -290,7 +289,7 @@ computeTransFactor factor int env = do
   (val, env') <- transFactor factor env
   case val of
       VInt x -> return(VInt(int * x), env')
-      _ -> error ("Can only add '+'/'-' before integers")
+      _ -> error ("Can only add '+'/'-' before integers.")
 
 -- Given a list of values, attempts to extract their int values to a list.
 evaluateToInts :: [Value] -> [Int]
@@ -317,12 +316,12 @@ transFactor x env = case x of
     (val, env') <- transExpression expression env
     case val of
       (VStr str) -> return (VInt (read str :: Int), env')
-      _ -> error ("Can only use 'string_to_int' on strings")
+      _ -> error ("Can only use 'string_to_int' on strings.")
   FactorItoS expression -> do
     (val, env') <- transExpression expression env
     case val of
       (VInt val) -> return (VStr (show val), env')
-      _ -> error ("Can only use 'int_to_string' on integers")
+      _ -> error ("Can only use 'int_to_string' on integers.")
 
 transActuals :: Actuals -> [Expression]
 transActuals x = case x of
