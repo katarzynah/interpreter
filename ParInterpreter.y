@@ -148,6 +148,7 @@ Statement : {- empty -} { AbsInterpreter.SEmpty }
           | PrintStatement { AbsInterpreter.SPrint $1 }
 AssignmentStatement :: { AssignmentStatement }
 AssignmentStatement : Ident ':=' Expression { AbsInterpreter.AssStmnt $1 $3 }
+                    | Ident '[' ExpressionList ']' ':=' Expression { AbsInterpreter.AssStmntArr $1 $3 $6 }
 ProcedureCall :: { ProcedureCall }
 ProcedureCall : Ident Actuals { AbsInterpreter.ProcCall $1 $2 }
 ForStatement :: { ForStatement }

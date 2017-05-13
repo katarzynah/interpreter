@@ -163,6 +163,7 @@ instance Print Statement where
 instance Print AssignmentStatement where
   prt i e = case e of
     AssStmnt id expression -> prPrec i 0 (concatD [prt 0 id, doc (showString ":="), prt 0 expression])
+    AssStmntArr id expressionlist expression -> prPrec i 0 (concatD [prt 0 id, doc (showString "["), prt 0 expressionlist, doc (showString "]"), doc (showString ":="), prt 0 expression])
 
 instance Print ProcedureCall where
   prt i e = case e of

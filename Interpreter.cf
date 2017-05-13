@@ -46,7 +46,8 @@ SWhile. Statement ::= WhileStatement ;
 SIf.    Statement ::= IfStatement ;
 SPrint. Statement ::= PrintStatement ;
 
-AssStmnt. AssignmentStatement ::= Ident ":=" Expression ;
+AssStmnt.    AssignmentStatement ::= Ident ":=" Expression ;
+AssStmntArr. AssignmentStatement ::= Ident "[" ExpressionList "]" ":=" Expression ;
 
 ProcCall. ProcedureCall ::= Ident Actuals ;
 

@@ -4,11 +4,16 @@ var x: array [3,2,5] of int;
 
 procedure z(y: array [3] of int;);
 begin
+    print(x);
 end;
 
 begin
-
 print(x[0,1,1,]);
+x[0,1,1,] := 13;
+x[0,1,0,] := 15;
+x[0,1,2,] := 3;
+print(x[0,1,1,]);
+print(x[0,1,]);
 z(x,);
 
 end.

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a tests=("test_dec" "test_fun_dec" "test1" "test_proc" "test_rekur" "test_proc_env" "test_silnia" "test_str_int")
+declare -a tests=("test_dec" "test_fun_dec" "test1" "test_proc" "test_rekur" "test_proc_env" "test_silnia" "test_str_int" "test_array")
 declare -a bad=("test_proc_assign" "test_embedded_fun")
 
 for i in "${tests[@]}"

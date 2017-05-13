@@ -76,6 +76,7 @@ transStatement x = case x of
 transAssignmentStatement :: AssignmentStatement -> Result
 transAssignmentStatement x = case x of
   AssStmnt ident expression -> failure x
+  AssStmntArr ident expressionlist expression -> failure x
 transProcedureCall :: ProcedureCall -> Result
 transProcedureCall x = case x of
   ProcCall ident actuals -> failure x

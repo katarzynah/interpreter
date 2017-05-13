@@ -70,7 +70,9 @@ data Statement
     | SPrint PrintStatement
   deriving (Eq, Ord, Show, Read)
 
-data AssignmentStatement = AssStmnt Ident Expression
+data AssignmentStatement
+    = AssStmnt Ident Expression
+    | AssStmntArr Ident ExpressionList Expression
   deriving (Eq, Ord, Show, Read)
 
 data ProcedureCall = ProcCall Ident Actuals
