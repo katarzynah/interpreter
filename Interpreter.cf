@@ -88,9 +88,9 @@ FactorItoS.         Factor ::= "int_to_string" "(" Expression ")";
 
 FunsCall. FunctionCall ::= Ident Actuals ;
 
-Act. Actuals ::= "(" ExpressionList ")" ;
+ActEmpty. Actuals ::= "(" ")";
+Act.      Actuals ::= "(" ExpressionList ")" ;
 
-ExpListEmpty. ExpressionList ::= ;
 ExpListOne.   ExpressionList ::= Expression ;
 ExpList.      ExpressionList ::= Expression "," ExpressionList ;
 

@@ -18,7 +18,7 @@ begin
     y := 10;
     print(x);
     print(y);
-    add(x, y,);
+    add(x, y);
     print(x);
     print(y);
 end.

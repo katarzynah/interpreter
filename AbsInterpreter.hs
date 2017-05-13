@@ -129,13 +129,11 @@ data Factor
 data FunctionCall = FunsCall Ident Actuals
   deriving (Eq, Ord, Show, Read)
 
-data Actuals = Act ExpressionList
+data Actuals = ActEmpty | Act ExpressionList
   deriving (Eq, Ord, Show, Read)
 
 data ExpressionList
-    = ExpListEmpty
-    | ExpListOne Expression
-    | ExpList Expression ExpressionList
+    = ExpListOne Expression | ExpList Expression ExpressionList
   deriving (Eq, Ord, Show, Read)
 
 data IdList = IdLEnd Ident | IdL Ident IdList

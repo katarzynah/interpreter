@@ -3,7 +3,7 @@ module Interpreter where
 import AbsInterpreter
 import Environment
 
-transProgram :: Program -> IO()
+transProgram :: Program -> IO ()
 transProgram x = case x of
   Prog _ declarations compoundStmt -> do
     env <- transDeclarations declarations emptyGEnv
@@ -35,7 +35,7 @@ transVariableDeclarationList x env = case x of
 transVarDec :: VarDec -> GEnv -> IO GEnv
 transVarDec x env = case x of
   VarDecLabel idList typeSpecifier -> do
-    let dimensions = transTypeSpecifier typeSpecifier
+    let dimensions = getDimsFromTypeSpec typeSpecifier
     return (declareVars env (getIdentsFromIdList idList) dimensions)
     
 transProcedureDeclarations :: ProcedureDeclarations -> GEnv -> IO GEnv
@@ -45,11 +45,6 @@ transProcedureDeclarations x env = case x of
     env' <- transProcDec procDecl env
     env'' <- transProcedureDeclarations procDeclarations env'
     return env''
-
--- Gets identifier from procedure/function declaration.
-getProcDecIdent :: ProcDec -> Ident
-getProcDecIdent (ProcDecProc (ProcHead id _) _ _) = id
-getProcDecIdent (ProcDecFun (FunHead id _ _) _ _) = id
 
 transProcDec :: ProcDec -> GEnv -> IO GEnv
 transProcDec x env = return (setDecl env (getProcDecIdent x) x)
@@ -152,7 +147,8 @@ transFunctionCall x env = case x of
       (ProcDecFun funcHeader declarations compoundStmnt) -> do
         let argumentIdents = getIdentsFromFuncHeader funcHeader
         let returnValueDim = getDimsFromFuncHeader funcHeader
-        env'' <- setUpFuncEnv argumentIdents values declarations ident returnValueDim env'
+        env'' <- (setUpFuncEnv argumentIdents values declarations ident
+                  returnValueDim env')
         finalEnv <- transCompoundStatement compoundStmnt env''
         let val = getVarVal finalEnv ident
         case finalEnv of
@@ -330,28 +326,14 @@ transFactor x env = case x of
 
 transActuals :: Actuals -> [Expression]
 transActuals x = case x of
+  ActEmpty -> []
   Act expressionList -> transExpressionList expressionList
 
 transExpressionList :: ExpressionList -> [Expression]
 transExpressionList x = case x of
-  ExpListEmpty -> []
   ExpListOne expression -> [expression]
   ExpList expression expressionList ->
     [expression] ++ transExpressionList expressionList
-
-transTypeSpecifier :: TypeSpecifier -> [Int]
-transTypeSpecifier x = case x of
-  TypeSpecInt -> []
-  TypeSpecBool -> []
-  TypeSpecString -> []
-  TypeSpecArray dimensionList typeSpecifier ->
-    transDimensionList dimensionList ++ transTypeSpecifier typeSpecifier
-
-transDimensionList :: DimensionList -> [Int]
-transDimensionList x = case x of
-  DimListEnd integer -> [(fromInteger integer)]
-  DimList integer dimensionList ->
-    ((fromInteger integer) : transDimensionList dimensionList)
 
 transConstant :: Constant -> Value
 transConstant x = case x of
@@ -366,6 +348,12 @@ transBoolean x = case x of
 
 -- Functions for getting identifiers and dimension lists.
 
+-- Gets procedure/function identifier from procedure/function declaration.
+getProcDecIdent :: ProcDec -> Ident
+getProcDecIdent (ProcDecProc (ProcHead id _) _ _) = id
+getProcDecIdent (ProcDecFun (FunHead id _ _) _ _) = id
+
+-- Gets identifiers of arguments from procedure header.
 getIdentsFromProcHeader :: ProcHeader -> [Ident]
 getIdentsFromProcHeader x = case x of
   ProcHead ident arguments -> getIdentsFromArguments arguments
@@ -395,4 +383,18 @@ getIdentsFromIdList x = case x of
 
 getDimsFromFuncHeader :: FuncHeader -> [Int]
 getDimsFromFuncHeader x = case x of
-  FunHead ident arguments typeSpecifier -> transTypeSpecifier typeSpecifier
+  FunHead ident arguments typeSpecifier -> getDimsFromTypeSpec typeSpecifier
+
+getDimsFromTypeSpec :: TypeSpecifier -> [Int]
+getDimsFromTypeSpec x = case x of
+  TypeSpecInt -> []
+  TypeSpecBool -> []
+  TypeSpecString -> []
+  TypeSpecArray dimensionList typeSpecifier ->
+    getDimsFromDimsList dimensionList ++ getDimsFromTypeSpec typeSpecifier
+
+getDimsFromDimsList :: DimensionList -> [Int]
+getDimsFromDimsList x = case x of
+  DimListEnd integer -> [(fromInteger integer)]
+  DimList integer dimensionList ->
+    ((fromInteger integer) : getDimsFromDimsList dimensionList)

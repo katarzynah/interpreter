@@ -226,11 +226,11 @@ instance Print FunctionCall where
 
 instance Print Actuals where
   prt i e = case e of
+    ActEmpty -> prPrec i 0 (concatD [doc (showString "("), doc (showString ")")])
     Act expressionlist -> prPrec i 0 (concatD [doc (showString "("), prt 0 expressionlist, doc (showString ")")])
 
 instance Print ExpressionList where
   prt i e = case e of
-    ExpListEmpty -> prPrec i 0 (concatD [])
     ExpListOne expression -> prPrec i 0 (concatD [prt 0 expression])
     ExpList expression expressionlist -> prPrec i 0 (concatD [prt 0 expression, doc (showString ","), prt 0 expressionlist])
 

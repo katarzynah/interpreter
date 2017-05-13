@@ -115,9 +115,9 @@ All other symbols are terminals.
   |  |  **|**  | ``string_to_int`` ``(`` //Expression// ``)`` 
   |  |  **|**  | ``int_to_string`` ``(`` //Expression// ``)`` 
   | //FunctionCall// | -> | //Ident// //Actuals// 
-  | //Actuals// | -> | ``(`` //ExpressionList// ``)`` 
-  | //ExpressionList// | -> | **eps**
-  |  |  **|**  | //Expression// 
+  | //Actuals// | -> | ``(`` ``)`` 
+  |  |  **|**  | ``(`` //ExpressionList// ``)`` 
+  | //ExpressionList// | -> | //Expression// 
   |  |  **|**  | //Expression// ``,`` //ExpressionList// 
   | //IdList// | -> | //Ident// 
   |  |  **|**  | //Ident// ``,`` //IdList// 

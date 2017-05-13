@@ -6,7 +6,7 @@ begin
 if x > 0 then
 begin
     print(x);
-    rekur(x - 1,);
+    rekur(x - 1);
 end
 else
     print(x)
@@ -15,5 +15,5 @@ end;
 
 begin
     x := 6;
-    rekur(x,);
+    rekur(x);
 end.

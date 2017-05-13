@@ -128,10 +128,10 @@ transFunctionCall x = case x of
   FunsCall ident actuals -> failure x
 transActuals :: Actuals -> Result
 transActuals x = case x of
+  ActEmpty -> failure x
   Act expressionlist -> failure x
 transExpressionList :: ExpressionList -> Result
 transExpressionList x = case x of
-  ExpListEmpty -> failure x
   ExpListOne expression -> failure x
   ExpList expression expressionlist -> failure x
 transIdList :: IdList -> Result
