@@ -6,7 +6,7 @@ import qualified Data.Sequence as Seq
 import AbsInterpreter
 import ErrM
 
-data Value = VInt Integer | VBool Bool | VStr String | VArray (Seq.Seq Value) | VNull
+data Value = VInt Int | VBool Bool | VStr String | VArray (Seq.Seq Value) | VNull
 
 instance Show Value where
     show (VInt val) = show val
@@ -81,7 +81,7 @@ transVarDec :: VarDec -> GEnv -> IO GEnv
 transVarDec x env = case x of
   VarDecLabel idList typeSpecifier -> do
     let dimensions = transTypeSpecifier typeSpecifier
-    return (declareVars env (transIdList idList) dimensions)
+    return (declareVars env (getIdentsFromIdList idList) dimensions)
     
 transProcedureDeclarations :: ProcedureDeclarations -> GEnv -> IO GEnv
 transProcedureDeclarations x env = case x of
@@ -99,28 +99,27 @@ getProcDecIdent (ProcDecFun (FunHead id _ _) _ _) = id
 transProcDec :: ProcDec -> GEnv -> IO GEnv
 transProcDec x env = return(setDecl env (getProcDecIdent x) x)
 
-getIdentsAndDimsFromProcHeader :: ProcHeader -> [([Ident], [Integer])]
-getIdentsAndDimsFromProcHeader x = case x of
-  ProcHead ident arguments -> getIdentsAndDimsFromArguments arguments
+getIdentsFromProcHeader :: ProcHeader -> [Ident]
+getIdentsFromProcHeader x = case x of
+  ProcHead ident arguments -> getIdentsFromArguments arguments
 
-getIdentsAndDimsFromFuncHeader :: FuncHeader -> [([Ident], [Integer])]
-getIdentsAndDimsFromFuncHeader x = case x of
-  FunHead ident arguments typeSpecifier -> getIdentsAndDimsFromArguments arguments
+getIdentsFromFuncHeader :: FuncHeader -> [Ident]
+getIdentsFromFuncHeader x = case x of
+  FunHead ident arguments typeSpecifier -> getIdentsFromArguments arguments
 
-getIdentsAndDimsFromArguments :: Arguments -> [([Ident], [Integer])]
-getIdentsAndDimsFromArguments x = case x of
-  Args argumentList -> getIdentsAndDimsFromArgList argumentList
+getIdentsFromArguments :: Arguments -> [Ident]
+getIdentsFromArguments x = case x of
+  Args argumentList -> getIdentsFromArgList argumentList
 
-getIdentsAndDimsFromArgList :: ArgumentList -> [([Ident], [Integer])]
-getIdentsAndDimsFromArgList x = case x of
+getIdentsFromArgList :: ArgumentList -> [Ident]
+getIdentsFromArgList x = case x of
   ArgListEmpty -> []
   ArgList arg argumentList ->
-    [getIdentsAndDimsFromArg arg] ++ getIdentsAndDimsFromArgList argumentList
+    getIdentsFromArg arg ++ getIdentsFromArgList argumentList
 
-getIdentsAndDimsFromArg :: Arg -> ([Ident], [Integer])
-getIdentsAndDimsFromArg x = case x of
-  ArgLabel idList typeSpecifier ->
-    (transIdList idList, transTypeSpecifier typeSpecifier)
+getIdentsFromArg :: Arg -> [Ident]
+getIdentsFromArg x = case x of
+  ArgLabel idList typeSpecifier -> getIdentsFromIdList idList
 
 -- TODO(Kasia): Add variable declarations in blacks?
 transCompoundStatement :: CompoundStatement -> GEnv -> IO GEnv
@@ -155,7 +154,7 @@ transAssignmentStatement x env = case x of
     (val, env') <- transExpression expression env
     let expressions = transExpressionList expressionList
     (values, env'') <- evaluateArguments expressions env'
-    let dims = evaluateToIntegers values
+    let dims = evaluateToInts values
     return (setArrayVal env'' ident dims val)
 
 _evaluateArguments :: [Expression] -> GEnv -> [Value] -> IO([Value], GEnv)
@@ -168,7 +167,7 @@ _evaluateArguments (expr : exprs) env values = do
 evaluateArguments :: [Expression] -> GEnv -> IO([Value], GEnv)
 evaluateArguments exprs env = _evaluateArguments exprs env []
 
-getArgumentIdents :: [([Ident], [Integer])] -> [Ident]
+getArgumentIdents :: [([Ident], [Int])] -> [Ident]
 getArgumentIdents [] = []
 getArgumentIdents ((idents, _) : xs) = idents ++ getArgumentIdents xs
 
@@ -180,15 +179,14 @@ transProcedureCall x env = case x of
     (values, env') <- evaluateArguments arguments env
     case procDec of
       (ProcDecProc procHeader declarations compoundStmnt) -> do
-        let argumentIdentsWithDims = getIdentsAndDimsFromProcHeader procHeader
-        let argumentIdents = getArgumentIdents argumentIdentsWithDims
+        let argumentIdents = getIdentsFromProcHeader procHeader
         if (length values) /= (length argumentIdents) then
           error ("Wrong number of arguments")
         else do
           -- adding a new local environment to our environments
           let newEnv = ((emptyEnv) : env')
           -- declaring procedure arguments in the environment
-          let newEnvWithUndefinedArgs = declareArguments newEnv argumentIdentsWithDims
+          let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents []
           -- setting the values of arguments in the environment
           let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
           -- adding local variable declarations
@@ -205,13 +203,12 @@ transFunctionCall x env = case x of
     (values, env') <- evaluateArguments arguments env
     case funcDec of
       (ProcDecFun funcHeader declarations compoundStmnt) -> do
-        let argumentIdentsWithDims = getIdentsAndDimsFromFuncHeader funcHeader
-        let argumentIdents = getArgumentIdents argumentIdentsWithDims
+        let argumentIdents = getIdentsFromFuncHeader funcHeader
         if (length values) /= (length argumentIdents) then
           error ("Wrong number of arguments")
         else do
           let newEnv = ((emptyEnv) : env')
-          let newEnvWithUndefinedArgs = declareArguments newEnv argumentIdentsWithDims
+          let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents []
           let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
           newEnvWithArgsAndVars <- transDeclarations declarations newEnvWithArgs
           let newEnvWithResult = declareVar newEnvWithArgsAndVars ident []
@@ -304,7 +301,7 @@ transExpression x env = case x of
   ExpGreaterOrEqual simpleExpr1 simpleExpr2 ->
     (compareExpressions simpleExpr1 simpleExpr2 env (>=))
 
-computeSimpleExpression :: SimpleExpression -> Term -> (Integer -> Integer -> Integer) -> GEnv -> IO (Value, GEnv)
+computeSimpleExpression :: SimpleExpression -> Term -> (Int -> Int -> Int) -> GEnv -> IO (Value, GEnv)
 computeSimpleExpression simpleExpr term fun env = do
   (val1, env') <- transSimpleExpression simpleExpr env
   (val2, env'') <- transTerm term env'
@@ -337,17 +334,17 @@ transTerm x env = case x of
                             else error ("Can't divide by 0")
         _ -> error ("Can only divide integers")
 
-computeTransFactor :: Factor -> Integer -> GEnv -> IO (Value, GEnv)
+computeTransFactor :: Factor -> Int -> GEnv -> IO (Value, GEnv)
 computeTransFactor factor int env = do
   (val, env') <- transFactor factor env
   case val of
       VInt x -> return(VInt(int * x), env')
       _ -> error ("Can only add '+'/'-' before integers")
 
-evaluateToIntegers :: [Value] -> [Integer]
-evaluateToIntegers [] = []
-evaluateToIntegers (val : vals) = case val of
-  VInt int -> if int >= 0 then (int : evaluateToIntegers vals)
+evaluateToInts :: [Value] -> [Int]
+evaluateToInts [] = []
+evaluateToInts (val : vals) = case val of
+  VInt int -> if int >= 0 then (int : evaluateToInts vals)
               else error ("Arrays are indexed by nonzero ints.")
   _ -> error ("Arrays are indexed only by ints.")
 
@@ -362,12 +359,12 @@ transFactor x env = case x of
   FactorArray ident expressionList -> do
     let expressions = transExpressionList expressionList
     (values, env') <- evaluateArguments expressions env
-    let dims = evaluateToIntegers values
+    let dims = evaluateToInts values
     return (getArrayVal env' ident dims, env')
   FactorStoI expression -> do
     (val, env') <- transExpression expression env
     case val of
-      (VStr str) -> return (VInt(read str :: Integer), env')
+      (VStr str) -> return (VInt(read str :: Int), env')
       _ -> error ("Can only use 'string_to_int' on strings")
   FactorItoS expression -> do
     (val, env') <- transExpression expression env
@@ -384,12 +381,12 @@ transExpressionList x = case x of
   ExpListEmpty -> []
   ExpList expression expressionList -> [expression] ++ transExpressionList expressionList
 
-transIdList :: IdList -> [Ident]
-transIdList x = case x of
+getIdentsFromIdList :: IdList -> [Ident]
+getIdentsFromIdList x = case x of
   IdLEnd ident -> [ident]
-  IdL ident idList -> [ident] ++ transIdList idList
+  IdL ident idList -> [ident] ++ getIdentsFromIdList idList
 
-transTypeSpecifier :: TypeSpecifier -> [Integer]
+transTypeSpecifier :: TypeSpecifier -> [Int]
 transTypeSpecifier x = case x of
   TypeSpecInt -> []
   TypeSpecBool -> []
@@ -397,14 +394,15 @@ transTypeSpecifier x = case x of
   TypeSpecArray dimensionList typeSpecifier ->
     transDimensionList dimensionList ++ transTypeSpecifier typeSpecifier
 
-transDimensionList :: DimensionList -> [Integer]
+transDimensionList :: DimensionList -> [Int]
 transDimensionList x = case x of
-  DimListEnd integer -> [integer]
-  DimList integer dimensionList -> (integer : transDimensionList dimensionList)
+  DimListEnd integer -> [(fromInteger integer)]
+  DimList integer dimensionList ->
+    ((fromInteger integer) : transDimensionList dimensionList)
 
 transConstant :: Constant -> Value
 transConstant x = case x of
-  ConstInt integer -> VInt integer
+  ConstInt integer -> VInt (fromInteger integer)
   ConstBool boolean -> transBoolean boolean
   ConstString string -> VStr string
 
@@ -417,17 +415,17 @@ transBoolean x = case x of
 -- GEnv helper functions
 
 -- Given int and a value returns VArray ([value] * n).
-_getArrayOfValues :: Integer -> Value -> Value
+_getArrayOfValues :: Int -> Value -> Value
 _getArrayOfValues n val | n <= 0 = error ("Array dimensions must be positive integers")
-                        | otherwise = VArray (Seq.replicate (fromInteger n) val)
+                        | otherwise = VArray (Seq.replicate n val)
 
 -- Returns matrix of given dimenensions of VNull.
-_getValueToDeclare :: [Integer] -> Value
+_getValueToDeclare :: [Int] -> Value
 _getValueToDeclare [] = VNull
 _getValueToDeclare (int : ints) = _getArrayOfValues int (_getValueToDeclare ints)
 
 -- Add variable identifier to the most local environment with unspecified value.
-declareVar :: GEnv -> Ident -> [Integer] -> GEnv
+declareVar :: GEnv -> Ident -> [Int] -> GEnv
 declareVar ((localVEnv, localPEnv) : envs) ident dims =
   case Map.lookup ident localVEnv of
     Nothing -> ((Map.insert ident value localVEnv, localPEnv) : envs) where
@@ -436,12 +434,12 @@ declareVar ((localVEnv, localPEnv) : envs) ident dims =
 
 -- Add a list of variable identifiers to the most local environment with
 -- unspecified value.
-declareVars :: GEnv -> [Ident] -> [Integer] -> GEnv
+declareVars :: GEnv -> [Ident] -> [Int] -> GEnv
 declareVars env [] _ = env
 declareVars env (ident : idents) dims =
   declareVars (declareVar env ident dims) idents dims
 
-declareArguments :: GEnv -> [([Ident], [Integer])] -> GEnv
+declareArguments :: GEnv -> [([Ident], [Int])] -> GEnv
 declareArguments env [] = env
 declareArguments env ((idents, dims) : xs) =
   declareArguments (declareVars env idents dims) xs
@@ -460,27 +458,25 @@ setVarsVals env [] _ = env
 setVarsVals env (ident : idents) (val : vals) =
   setVarsVals (setVarVal env ident val) idents vals
 
-_setValueInArray :: Value -> [Integer] -> Value -> Value
+_setValueInArray :: Value -> [Int] -> Value -> Value
 _setValueInArray array [] _ =
   error "You cannot assign to array, just it's elements"
 _setValueInArray array (x:[]) val =
   case array of
     VArray sequen ->
-      if xInt >= length sequen then error ("Index out of bounds") else
-      VArray (Seq.update xInt val sequen) where
-        xInt = fromInteger x
+      if x >= length sequen then error ("Index out of bounds") else
+      VArray (Seq.update x val sequen)
     _ -> error "Wrong number of dimensions provided"
 _setValueInArray array (x:xs) val =
   case array of
     VArray sequen -> 
-      if xInt >= length sequen then error ("Index out of bounds") else
-      VArray (Seq.update (fromInteger x) newValue sequen) where
-        newValue =_setValueInArray (Seq.index sequen xInt) xs val
-        xInt = fromInteger x
+      if x >= length sequen then error ("Index out of bounds") else
+      VArray (Seq.update x newValue sequen) where
+        newValue =_setValueInArray (Seq.index sequen x) xs val
 
     _ -> error "Wrong number of dimensions provided"
 
-setArrayVal :: GEnv -> Ident -> [Integer] -> Value -> GEnv
+setArrayVal :: GEnv -> Ident -> [Int] -> Value -> GEnv
 setArrayVal [] ident _ _ = error ("Variable " ++ show ident ++ " not defined")
 setArrayVal ((localVEnv, localPEnv) : envs) ident dims val =
   case Map.lookup ident localVEnv of
@@ -490,13 +486,12 @@ setArrayVal ((localVEnv, localPEnv) : envs) ident dims val =
         localPEnv) : envs)
     Just _ -> error ("Variable " ++ show ident ++ " is not an array")
 
-_getValueToFetch :: Value -> [Integer] -> Value
+_getValueToFetch :: Value -> [Int] -> Value
 _getValueToFetch val [] = val
 _getValueToFetch val (dim : dims) = case val of
   VArray values -> 
-    if dimInt >= length values then error ("Index out of bounds") else
-    _getValueToFetch (Seq.index values dimInt) dims where
-      dimInt = fromInteger dim
+    if dim >= length values then error ("Index out of bounds") else
+    _getValueToFetch (Seq.index values dim) dims
   _ -> error ("Wrong number of dimensions provided!")
 
 -- Get value of variable with given identifier.
@@ -507,7 +502,7 @@ getVarVal ((localVEnv, _) : envs) ident =
     Nothing -> getVarVal envs ident
     Just val -> val
 
-getArrayVal :: GEnv -> Ident -> [Integer] -> Value
+getArrayVal :: GEnv -> Ident -> [Int] -> Value
 getArrayVal [] ident _ = error("Variable " ++ show ident ++ " not defined")
 getArrayVal ((localVEnv, _) : envs) ident dims =
   case Map.lookup ident localVEnv of
