@@ -1,7 +1,6 @@
 module Environment
 (GEnv,
  Env,
- Value (..),
  emptyGEnv,
  emptyEnv,
  declareVar,
@@ -16,6 +15,7 @@ module Environment
 where
 
 import AbsInterpreter
+import Value
 
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
@@ -33,31 +33,6 @@ type Env = (VEnv, PEnv)
 -- level of declarations. It keeps the levels in revers order, so that the most
 -- global declarations are at the end of the list.
 type GEnv = [Env]
-
--- Type for storing values that are used in the program (what variables can
--- evaluate to).
-data Value = VInt Int |
-             VBool Bool |
-             VStr String |
-             VArray (Seq.Seq Value) |
-             VNull
-
-instance Show Value where
-    show (VInt val) = show val
-    show (VBool val) = show val
-    show (VStr val) = show val
-    show (VArray val) = show val
-    show VNull = "undefined"
-
-instance Eq Value where
-    (VInt val1) == (VInt val2) = val1 == val2
-    (VBool val1) == (VBool val2) = val1 == val2
-    (VStr val1) == (VStr val2) = val1 == val2
-
-instance Ord Value where
-    compare (VInt val1) (VInt val2) = compare val1 val2
-    compare (VBool val1) (VBool val2) = compare val1 val2
-    compare (VStr val1) (VStr val2) = compare val1 val2
 
 -- Returns empty environment.
 emptyEnv :: Env

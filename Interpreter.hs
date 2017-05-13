@@ -2,12 +2,13 @@ module Interpreter where
 
 import AbsInterpreter
 import Environment
+import Value
 
 transProgram :: Program -> IO ()
 transProgram x = case x of
   Prog _ declarations compoundStmt -> do
     env <- transDeclarations declarations emptyGEnv
-    print env --TODO: used in tests!!! but remove before turning in
+    print env
     _ <- transCompoundStatement compoundStmt env
     return ()
 
@@ -281,7 +282,6 @@ transTerm x env = case x of
                             else error ("Can't divide by 0.")
         _ -> error ("Can only divide integers.")
 
-
 -- Given factor, int and environment, evaluates the factor and returns its value
 -- multiplied by the integer in context.
 computeTransFactor :: Factor -> Int -> GEnv -> IO (Value, GEnv)
@@ -290,14 +290,6 @@ computeTransFactor factor int env = do
   case val of
       VInt x -> return(VInt(int * x), env')
       _ -> error ("Can only add '+'/'-' before integers.")
-
--- Given a list of values, attempts to extract their int values to a list.
-evaluateToInts :: [Value] -> [Int]
-evaluateToInts [] = []
-evaluateToInts (val : vals) = case val of
-  VInt int -> if int >= 0 then (int : evaluateToInts vals)
-              else error ("Arrays are indexed by nonzero ints.")
-  _ -> error ("Arrays are indexed only by ints.")
 
 transFactor :: Factor -> GEnv -> IO (Value, GEnv)
 transFactor x env = case x of
@@ -357,6 +349,7 @@ getIdentsFromProcHeader :: ProcHeader -> [Ident]
 getIdentsFromProcHeader x = case x of
   ProcHead ident arguments -> getIdentsFromArguments arguments
 
+-- Gets identifiers of arguments from function header.
 getIdentsFromFuncHeader :: FuncHeader -> [Ident]
 getIdentsFromFuncHeader x = case x of
   FunHead ident arguments typeSpecifier -> getIdentsFromArguments arguments
