@@ -2,8 +2,13 @@ program f;
 
 var x: array [3,2,5] of int;
 
+procedure z(y: array [3] of int;);
+begin
+end;
+
 begin
 
 print(x[0,]);
+z(x,);
 
 end.
