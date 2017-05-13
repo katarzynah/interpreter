@@ -1,0 +1,21 @@
+program f;
+
+var z : int;
+
+begin
+    z := 5;
+
+    begin
+    var z: int;
+
+    begin
+    z := 3;
+    print(z);
+    end;
+
+    end;
+
+    print(z);
+end.
+
+

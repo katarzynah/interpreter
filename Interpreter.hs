@@ -99,29 +99,6 @@ getProcDecIdent (ProcDecFun (FunHead id _ _) _ _) = id
 transProcDec :: ProcDec -> GEnv -> IO GEnv
 transProcDec x env = return(setDecl env (getProcDecIdent x) x)
 
-getIdentsFromProcHeader :: ProcHeader -> [Ident]
-getIdentsFromProcHeader x = case x of
-  ProcHead ident arguments -> getIdentsFromArguments arguments
-
-getIdentsFromFuncHeader :: FuncHeader -> [Ident]
-getIdentsFromFuncHeader x = case x of
-  FunHead ident arguments typeSpecifier -> getIdentsFromArguments arguments
-
-getIdentsFromArguments :: Arguments -> [Ident]
-getIdentsFromArguments x = case x of
-  Args argumentList -> getIdentsFromArgList argumentList
-
-getIdentsFromArgList :: ArgumentList -> [Ident]
-getIdentsFromArgList x = case x of
-  ArgListEmpty -> []
-  ArgList arg argumentList ->
-    getIdentsFromArg arg ++ getIdentsFromArgList argumentList
-
-getIdentsFromArg :: Arg -> [Ident]
-getIdentsFromArg x = case x of
-  ArgLabel idList typeSpecifier -> getIdentsFromIdList idList
-
--- TODO(Kasia): Add variable declarations in blacks?
 transCompoundStatement :: CompoundStatement -> GEnv -> IO GEnv
 transCompoundStatement x env = case x of
   CompStmnt statementList -> transStatementList statementList env
@@ -167,9 +144,19 @@ _evaluateArguments (expr : exprs) env values = do
 evaluateArguments :: [Expression] -> GEnv -> IO([Value], GEnv)
 evaluateArguments exprs env = _evaluateArguments exprs env []
 
-getArgumentIdents :: [([Ident], [Int])] -> [Ident]
-getArgumentIdents [] = []
-getArgumentIdents ((idents, _) : xs) = idents ++ getArgumentIdents xs
+setUpProcEnv :: [Ident] -> [Value] -> Declarations -> GEnv -> IO GEnv
+setUpProcEnv idents values declarations env = do
+  if (length values) /= (length idents) then
+    error ("Wrong number of arguments")
+  else do
+    -- adding a new local environment to our environments
+    let newEnv = (emptyEnv : env)
+    -- declaring procedure arguments in the environment
+    let newEnvWithUndefinedArgs = declareVars newEnv idents []
+    -- setting the values of arguments in the environment
+    let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs idents values
+    -- adding local variable declarations
+    transDeclarations declarations newEnvWithArgs
 
 transProcedureCall :: ProcedureCall -> GEnv -> IO GEnv
 transProcedureCall x env = case x of
@@ -180,20 +167,16 @@ transProcedureCall x env = case x of
     case procDec of
       (ProcDecProc procHeader declarations compoundStmnt) -> do
         let argumentIdents = getIdentsFromProcHeader procHeader
-        if (length values) /= (length argumentIdents) then
-          error ("Wrong number of arguments")
-        else do
-          -- adding a new local environment to our environments
-          let newEnv = ((emptyEnv) : env')
-          -- declaring procedure arguments in the environment
-          let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents []
-          -- setting the values of arguments in the environment
-          let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
-          -- adding local variable declarations
-          newEnvWithArgsAndVars <- transDeclarations declarations newEnvWithArgs
-          finalEnv <- transCompoundStatement compoundStmnt newEnvWithArgsAndVars
-          case finalEnv of
-            (localEnv : env) -> do return env
+        env'' <- setUpProcEnv argumentIdents values declarations env'
+        finalEnv <- transCompoundStatement compoundStmnt env''
+        case finalEnv of
+          (localEnv : env) -> do return env
+
+setUpFuncEnv :: [Ident] -> [Value] -> Declarations -> Ident -> [Int] -> GEnv -> IO GEnv
+setUpFuncEnv idents values declarations ident dims env = do
+  env' <- setUpProcEnv idents values declarations env
+  -- adding variable with same identificator as function to the environment
+  return (declareVar env' ident dims)
 
 transFunctionCall :: FunctionCall -> GEnv -> IO (Value, GEnv)
 transFunctionCall x env = case x of
@@ -204,19 +187,13 @@ transFunctionCall x env = case x of
     case funcDec of
       (ProcDecFun funcHeader declarations compoundStmnt) -> do
         let argumentIdents = getIdentsFromFuncHeader funcHeader
-        if (length values) /= (length argumentIdents) then
-          error ("Wrong number of arguments")
-        else do
-          let newEnv = ((emptyEnv) : env')
-          let newEnvWithUndefinedArgs = declareVars newEnv argumentIdents []
-          let newEnvWithArgs = setVarsVals newEnvWithUndefinedArgs argumentIdents values
-          newEnvWithArgsAndVars <- transDeclarations declarations newEnvWithArgs
-          let newEnvWithResult = declareVar newEnvWithArgsAndVars ident []
-          finalEnv <- transCompoundStatement compoundStmnt newEnvWithResult
-          case finalEnv of
-            (localEnv : env) -> do
-              let val = getVarVal finalEnv ident
-              return (val, env)
+        let returnValueDim = getDimsFromFuncHeader funcHeader
+        env'' <- setUpFuncEnv argumentIdents values declarations ident returnValueDim env'
+        finalEnv <- transCompoundStatement compoundStmnt env''
+        let val = getVarVal finalEnv ident
+        case finalEnv of
+          (localEnv : env) -> do
+            return (val, env)
       _ -> error ("Procedures don't return values")
 
 -- Executes the for loop, ident is the identyficator of the counter variavle,
@@ -381,11 +358,6 @@ transExpressionList x = case x of
   ExpListEmpty -> []
   ExpList expression expressionList -> [expression] ++ transExpressionList expressionList
 
-getIdentsFromIdList :: IdList -> [Ident]
-getIdentsFromIdList x = case x of
-  IdLEnd ident -> [ident]
-  IdL ident idList -> [ident] ++ getIdentsFromIdList idList
-
 transTypeSpecifier :: TypeSpecifier -> [Int]
 transTypeSpecifier x = case x of
   TypeSpecInt -> []
@@ -411,6 +383,38 @@ transBoolean x = case x of
   BoolTrue -> VBool(True)
   BoolFalse -> VBool(False)
 
+-- Functions for getting identifiers and dimension lists.
+
+getIdentsFromProcHeader :: ProcHeader -> [Ident]
+getIdentsFromProcHeader x = case x of
+  ProcHead ident arguments -> getIdentsFromArguments arguments
+
+getIdentsFromFuncHeader :: FuncHeader -> [Ident]
+getIdentsFromFuncHeader x = case x of
+  FunHead ident arguments typeSpecifier -> getIdentsFromArguments arguments
+
+getIdentsFromArguments :: Arguments -> [Ident]
+getIdentsFromArguments x = case x of
+  Args argumentList -> getIdentsFromArgList argumentList
+
+getIdentsFromArgList :: ArgumentList -> [Ident]
+getIdentsFromArgList x = case x of
+  ArgListEmpty -> []
+  ArgList arg argumentList ->
+    getIdentsFromArg arg ++ getIdentsFromArgList argumentList
+
+getIdentsFromArg :: Arg -> [Ident]
+getIdentsFromArg x = case x of
+  ArgLabel idList typeSpecifier -> getIdentsFromIdList idList
+
+getIdentsFromIdList :: IdList -> [Ident]
+getIdentsFromIdList x = case x of
+  IdLEnd ident -> [ident]
+  IdL ident idList -> [ident] ++ getIdentsFromIdList idList
+
+getDimsFromFuncHeader :: FuncHeader -> [Int]
+getDimsFromFuncHeader x = case x of
+  FunHead ident arguments typeSpecifier -> transTypeSpecifier typeSpecifier
 
 -- GEnv helper functions
 
@@ -438,11 +442,6 @@ declareVars :: GEnv -> [Ident] -> [Int] -> GEnv
 declareVars env [] _ = env
 declareVars env (ident : idents) dims =
   declareVars (declareVar env ident dims) idents dims
-
-declareArguments :: GEnv -> [([Ident], [Int])] -> GEnv
-declareArguments env [] = env
-declareArguments env ((idents, dims) : xs) =
-  declareArguments (declareVars env idents dims) xs
 
 -- Set value of already declared variable with given identifier.
 setVarVal :: GEnv -> Ident -> Value -> GEnv
