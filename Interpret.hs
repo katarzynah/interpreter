@@ -16,13 +16,20 @@ import ErrM
 
 type ParseFun a = [Token] -> Err a
 
+<<<<<<< HEAD
 myLLexer = myLexer
 
+=======
+>>>>>>> 3ab0404bb73b04ae7fb3ec4d71ff82d36775821d
 runFile :: ParseFun Program -> FilePath -> IO ()
 runFile p f = readFile f >>= run p
 
 run :: ParseFun Program -> String ->  IO()
+<<<<<<< HEAD
 run p s = let ts = myLLexer s in case p ts of
+=======
+run p s = let ts = myLexer s in case p ts of
+>>>>>>> 3ab0404bb73b04ae7fb3ec4d71ff82d36775821d
     Bad err -> do
         putStrLn err
         exitFailure
