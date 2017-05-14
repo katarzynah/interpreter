@@ -8,7 +8,6 @@ transProgram :: Program -> IO ()
 transProgram x = case x of
   Prog _ declarations compoundStmt -> do
     env <- transDeclarations declarations emptyGEnv
-    print env
     _ <- transCompoundStatement compoundStmt env
     return ()
 
@@ -102,7 +101,7 @@ evaluateArguments exprs env = _evaluateArguments exprs env []
 setUpProcEnv :: [Ident] -> [Value] -> Declarations -> GEnv -> IO GEnv
 setUpProcEnv idents values declarations env = do
   if (length values) /= (length idents) then
-    error ("Wrong number of arguments.")
+    error "Wrong number of arguments."
   else do
     -- adding a new local environment to our environments
     let newEnv = (emptyEnv : env)
@@ -154,7 +153,7 @@ transFunctionCall x env = case x of
         let val = getVarVal finalEnv ident
         case finalEnv of
           (localEnv : env) -> return (val, env)
-      _ -> error ("Procedures don't return values.")
+      _ -> error "Procedures don't return values."
 
 -- Executes the for loop, ident is the identyficator of the counter variable,
 -- endValue is the value which causes the loop to finish when counter reaches
@@ -268,7 +267,7 @@ computeSimpleExpression simpleExpr term fun env = do
   (val2, env'') <- transTerm term env'
   case (val1, val2) of
       (VInt x, VInt y) -> return (VInt(fun x y), env'')
-      _ -> error ("Can only add/substract integers")
+      _ -> error "Can only add/substract integers."
 
 transSimpleExpression :: SimpleExpression -> GEnv -> IO (Value, GEnv)
 transSimpleExpression x env = case x of
@@ -286,14 +285,14 @@ transTerm x env = case x of
     (val2, env'') <- transFactor factor env'
     case (val1, val2) of
         (VInt x, VInt y) -> return (VInt(x * y), env'')
-        _ -> error ("Can only multipy integers.")
+        _ -> error "Can only multipy integers."
   TermDivide term factor -> do
     (val1, env') <- transTerm term env
     (val2, env'') <- transFactor factor env'
     case (val1, val2) of
         (VInt x, VInt y) -> if y /=0 then return (VInt(div x y), env'')
-                            else error ("Can't divide by 0.")
-        _ -> error ("Can only divide integers.")
+                            else error "Can't divide by 0."
+        _ -> error "Can only divide integers."
 
 -- Given factor, int and environment, evaluates the factor and returns its value
 -- multiplied by the integer in context.
@@ -302,7 +301,7 @@ computeTransFactor factor int env = do
   (val, env') <- transFactor factor env
   case val of
       VInt x -> return(VInt(int * x), env')
-      _ -> error ("Can only add '+'/'-' before integers.")
+      _ -> error "Can only add '+'/'-' before integers."
 
 transFactor :: Factor -> GEnv -> IO (Value, GEnv)
 transFactor x env = case x of
@@ -321,12 +320,12 @@ transFactor x env = case x of
     (val, env') <- transExpression expression env
     case val of
       (VStr str) -> return (VInt (read str :: Int), env')
-      _ -> error ("Can only use 'string_to_int' on strings.")
+      _ -> error "Can only use 'string_to_int' on strings."
   FactorItoS expression -> do
     (val, env') <- transExpression expression env
     case val of
       (VInt val) -> return (VStr (show val), env')
-      _ -> error ("Can only use 'int_to_string' on integers.")
+      _ -> error "Can only use 'int_to_string' on integers."
 
 transActuals :: Actuals -> [Expression]
 transActuals x = case x of

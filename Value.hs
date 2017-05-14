@@ -35,5 +35,5 @@ evaluateToInts :: [Value] -> [Int]
 evaluateToInts [] = []
 evaluateToInts (val : vals) = case val of
   VInt int -> if int >= 0 then (int : evaluateToInts vals)
-              else error ("Arrays are indexed by nonzero ints.")
-  _ -> error ("Arrays are indexed only by ints.")
+              else error "Arrays are indexed by nonzero ints."
+  _ -> error "Arrays are indexed only by ints."
