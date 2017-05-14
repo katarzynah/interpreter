@@ -9,4 +9,5 @@ begin
     a[2] := 3;
     print(a);
     x := a[3];
+    print(x);
 end.

@@ -94,12 +94,12 @@ _getVarVal ((localVEnv, _) : envs) ident =
 getVarVal :: Ident -> ProgramState Value
 getVarVal ident = state $ \(env) -> ((_getVarVal env ident), env)
 
--- Set value of already declared array at given indices.
+-- Get value of already declared array at given indices.
 _getArrayVal :: GEnv -> Ident -> [Int] -> Value
 _getArrayVal [] ident _ = error ("Variable " ++ show ident ++ " not defined.")
 _getArrayVal ((localVEnv, _) : envs) ident dims =
   case Map.lookup ident localVEnv of
-    Nothing -> _getVarVal envs ident
+    Nothing -> _getArrayVal envs ident dims
     Just val -> _getValueToFetch val dims
 
 -- Get value of already declared array at given indices.
