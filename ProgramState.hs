@@ -61,6 +61,14 @@ declareVars (ident : idents) dims = do
   declareVar ident dims
   declareVars idents dims
 
+_getValueToFetch :: Value -> [Int] -> Value
+_getValueToFetch val [] = val
+_getValueToFetch val (dim : dims) = case val of
+  VArray values -> 
+    if dim >= Seq.length values then error "Index out of bounds." else
+    _getValueToFetch (Seq.index values dim) dims
+  _ -> error "Wrong number of dimensions provided!"
+
 _getVarVal :: GEnv -> Ident -> Value
 _getVarVal [] ident = error ("Variable " ++ show ident ++ " not defined.")
 _getVarVal ((localVEnv, _) : envs) ident =
@@ -71,6 +79,17 @@ _getVarVal ((localVEnv, _) : envs) ident =
 -- Get value of variable with given identifier.
 getVarVal :: Ident -> ProgramState Value
 getVarVal ident = state $ \(env) -> ((_getVarVal env ident), env)
+
+-- Set value of already declared array at given indices.
+_getArrayVal :: GEnv -> Ident -> [Int] -> Value
+_getArrayVal [] ident _ = error ("Variable " ++ show ident ++ " not defined.")
+_getArrayVal ((localVEnv, _) : envs) ident dims =
+  case Map.lookup ident localVEnv of
+    Nothing -> _getVarVal envs ident
+    Just val -> _getValueToFetch val dims
+
+getArrayVal :: Ident -> [Int] -> ProgramState Value
+getArrayVal ident dims = state $ \(env) -> (_getArrayVal env ident dims, env)
 
 -- Set value of already declared variable with given identifier.
 _setVarVal :: GEnv -> Ident -> Value -> GEnv
@@ -83,6 +102,38 @@ _setVarVal ((localVEnv, localPEnv) : envs) ident val =
 -- Set value of already declared variable with given identifier.
 setVarVal :: Ident -> Value -> ProgramState ()
 setVarVal ident val = state $ \(env) -> ((), _setVarVal env ident val)
+
+_setValueInArray :: Value -> [Int] -> Value -> Value
+_setValueInArray array [] _ =
+  error "You cannot assign to array, just its elements."
+_setValueInArray array (x:[]) val =
+  case array of
+    VArray sequen ->
+      if x >= Seq.length sequen then error "Index out of bounds." else
+      VArray (Seq.update x val sequen)
+    _ -> error "Wrong number of dimensions provided."
+_setValueInArray array (x:xs) val =
+  case array of
+    VArray sequen -> 
+      if x >= Seq.length sequen then error "Index out of bounds." else
+      VArray (Seq.update x newValue sequen) where
+        newValue =_setValueInArray (Seq.index sequen x) xs val
+    _ -> error "Wrong number of dimensions provided."
+
+_setArrayVal :: GEnv -> Ident -> [Int] -> Value -> GEnv
+_setArrayVal [] ident _ _ = error ("Variable " ++ show ident ++ " not defined.")
+_setArrayVal ((localVEnv, localPEnv) : envs) ident dims val =
+  case Map.lookup ident localVEnv of
+    Nothing -> ((localVEnv, localPEnv) : _setVarVal envs ident val)
+    Just array@(VArray _) ->
+      ((Map.insert ident (_setValueInArray array dims val) localVEnv,
+        localPEnv) : envs)
+    Just _ -> error ("Variable " ++ show ident ++ " is not an array.")
+
+-- Set value of already declared array at given indices.
+setArrayVal :: Ident -> [Int] -> Value -> ProgramState ()
+setArrayVal ident dims val = state $ \(env) ->
+  ((), _setArrayVal env ident dims val)
 
 -- Add function/procedure identifier to the most local environment.
 setDecl :: Ident -> ProcDec -> ProgramState ()

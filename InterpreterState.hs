@@ -81,12 +81,12 @@ transAssignmentStatement x = case x of
   AssStmnt ident expression -> do
     val <- transExpression expression
     setVarVal ident val
-  --AssStmntArr ident expressionList expression -> do
-  --  (val, env') <- transExpression expression env
-  --  let expressions = transExpressionList expressionList
-  --  (values, env'') <- evaluateArguments expressions env'
-  --  let dims = evaluateToInts values
-  --  return (setArrayVal env'' ident dims val)
+  AssStmntArr ident expressionList expression -> do
+    val <- transExpression expression
+    let expressions = transExpressionList expressionList
+    values <- evaluateArguments expressions
+    let dims = evaluateToInts values
+    setArrayVal ident dims val
 
 -- Executes the for loop, ident is the identyficator of the counter variable,
 -- endValue is the value which causes the loop to finish when counter reaches
@@ -248,11 +248,11 @@ transFactor x = case x of
   --FactorFunctionCall functionCall -> transFunctionCall functionCall env
   FactorConstant constant -> return (transConstant constant)
   FactorIdent ident -> getVarVal ident
-  --FactorArray ident expressionList -> do
-  --  let expressions = transExpressionList expressionList
-  --  (values, env') <- evaluateArguments expressions env
-  --  let dims = evaluateToInts values
-  --  return (getArrayVal env' ident dims, env')
+  FactorArray ident expressionList -> do
+    let expressions = transExpressionList expressionList
+    values <- evaluateArguments expressions
+    let dims = evaluateToInts values
+    getArrayVal ident dims
   FactorStoI expression -> do
     val <- transExpression expression
     case val of

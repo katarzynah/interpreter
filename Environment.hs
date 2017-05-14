@@ -2,7 +2,6 @@ module Environment
 (
  setVarsVals,
  setArrayVal,
- getArrayVal,
  setDecl,
  getDecl)
 where

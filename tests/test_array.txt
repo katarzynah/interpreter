@@ -1,11 +1,7 @@
 program f;
 
 var x: array [3,2,5] of int;
-
-procedure z(y: array [3] of int);
-begin
-    print(x);
-end;
+z: array [2] of array [2] of int;
 
 begin
 print(x[0,1,1]);
@@ -14,6 +10,11 @@ x[0,1,0] := 15;
 x[0,1,2] := 3;
 print(x[0,1,1]);
 print(x[0,1]);
-z(x);
+
+z[0,0] := 1;
+z[0,1] := 2;
+z[1,0] := 3;
+z[1,1] := 4;
+print(z);
 
 end.
