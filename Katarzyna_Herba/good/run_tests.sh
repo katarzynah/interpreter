@@ -6,8 +6,8 @@ declare -a bad=("test_double_var_block" "test_no_begin" "test_wrong_symbol" "tes
 for i in "${tests[@]}"
 do
     echo "$i"
-    ./Interpret tests/$i.txt > tests/tmp.out
-    diff tests/$i.out tests/tmp.out
+    ./Interpret good/$i.txt > good/tmp.out
+    diff good/$i.out good/tmp.out
 done
 
 for i in "${bad[@]}"

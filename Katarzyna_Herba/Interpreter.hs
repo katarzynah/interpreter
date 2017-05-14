@@ -1,4 +1,4 @@
-module InterpreterState where
+module Interpreter where
 
 import Control.Monad.State 
 
@@ -8,8 +8,7 @@ import ProgramState
 
 runProgram :: Program -> IO ()
 runProgram program = do
-  (_, env) <- runStateT (transProgram program) emptyGEnv
-  print env
+  _ <- runStateT (transProgram program) emptyGEnv
   return ()
 
 transProgram :: Program -> ProgramState ()

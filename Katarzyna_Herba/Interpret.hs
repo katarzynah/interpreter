@@ -10,7 +10,7 @@ import AbsInterpreter
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
-import InterpreterState
+import Interpreter
 
 import ErrM
 
