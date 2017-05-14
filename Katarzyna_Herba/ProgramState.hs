@@ -1,4 +1,17 @@
 module ProgramState
+(ProgramState,
+ emptyGEnv,
+ declareVar,
+ declareVars,
+ setVarVal,
+ setVarsVals,
+ setArrayVal,
+ getVarVal,
+ getArrayVal,
+ setDecl,
+ getDecl,
+ addLocalEnvironment,
+ exitLocalEnvironment)
 where
 
 import Control.Monad.State
@@ -44,6 +57,7 @@ _getValueToDeclare [] = VNull
 _getValueToDeclare (int : ints) =
   _getArrayOfValues int (_getValueToDeclare ints)
 
+-- Add variable identifier to the most local environment with unspecified value.
 declareVar :: Ident -> [Int] -> ProgramState ()
 declareVar ident dims = state $ \(env) ->
   case env of
@@ -53,6 +67,8 @@ declareVar ident dims = state $ \(env) ->
           value =  _getValueToDeclare dims
         Just _ -> error ("Variable " ++ show ident ++ " already declared.")
 
+-- Add a list of variable identifiers to the most local environment with
+-- unspecified value.
 declareVars :: [Ident] -> [Int] -> ProgramState ()
 declareVars [] _ = return ()
 declareVars (ident : idents) dims = do
@@ -86,6 +102,7 @@ _getArrayVal ((localVEnv, _) : envs) ident dims =
     Nothing -> _getVarVal envs ident
     Just val -> _getValueToFetch val dims
 
+-- Get value of already declared array at given indices.
 getArrayVal :: Ident -> [Int] -> ProgramState Value
 getArrayVal ident dims = state $ \(env) -> (_getArrayVal env ident dims, env)
 
@@ -159,6 +176,7 @@ _getDecl ((_, localPEnv) : envs) ident =
     Nothing -> _getDecl envs ident
     Just val -> val
 
+-- Get definition of function/procedure with given identifier.
 getDecl :: Ident -> ProgramState ProcDec
 getDecl ident = state $ \(env) -> (_getDecl env ident, env)
 

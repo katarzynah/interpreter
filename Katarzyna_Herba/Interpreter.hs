@@ -283,8 +283,8 @@ transTerm x = case x of
                             else error "Can't divide by 0."
         _ -> error "Can only divide integers."
 
--- Given factor, int and environment, evaluates the factor and returns its value
--- multiplied by the integer in context.
+-- Given factor and int evaluates the factor and returns its value
+-- multiplied by the integer.
 computeTransFactor :: Factor -> Int -> ProgramState Value
 computeTransFactor factor int = do
   val <- transFactor factor
