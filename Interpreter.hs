@@ -37,7 +37,7 @@ transVarDec x env = case x of
   VarDecLabel idList typeSpecifier -> do
     let dimensions = getDimsFromTypeSpec typeSpecifier
     return (declareVars env (getIdentsFromIdList idList) dimensions)
-    
+
 transProcedureDeclarations :: ProcedureDeclarations -> GEnv -> IO GEnv
 transProcedureDeclarations x env = case x of
   ProcDecEmpty -> return env
@@ -100,8 +100,7 @@ evaluateArguments exprs env = _evaluateArguments exprs env []
 -- the environment in the procedure.
 setUpProcEnv :: [Ident] -> [Value] -> Declarations -> GEnv -> IO GEnv
 setUpProcEnv idents values declarations env = do
-  if (length values) /= (length idents) then
-    error "Wrong number of arguments."
+  if (length values) /= (length idents) then error "Wrong number of arguments."
   else do
     -- adding a new local environment to our environments
     let newEnv = (emptyEnv : env)
@@ -196,18 +195,15 @@ transIfStatement x env = case x of
   IfStmnt expression statement -> do
     (val, env') <- transExpression expression env
     case val of
-      VBool(True) -> do
-        transStatement statement env'
+      VBool(True) -> transStatement statement env'
       VBool(False) -> return env'
       _ -> error ("If statement can only be used with expressions that " ++
                   "evaluate to boolean values.")
   IfStmntWithElse expression statement1 statement2 -> do
     (val, env') <- transExpression expression env
     case val of
-      VBool(True) -> do
-        transStatement statement1 env'
-      VBool(False) -> do
-        transStatement statement2 env'
+      VBool(True) -> transStatement statement1 env'
+      VBool(False) -> transStatement statement2 env'
       _ -> error ("If statement can only be used with expressions that " ++
                   "evaluate to boolean values.")
 
