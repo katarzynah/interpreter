@@ -356,11 +356,12 @@ getIdentsFromFuncHeader x = case x of
 
 getIdentsFromArguments :: Arguments -> [Ident]
 getIdentsFromArguments x = case x of
+  ArgsEmpty -> []
   Args argumentList -> getIdentsFromArgList argumentList
 
 getIdentsFromArgList :: ArgumentList -> [Ident]
 getIdentsFromArgList x = case x of
-  ArgListEmpty -> []
+  ArgListOne arg -> getIdentsFromArg arg
   ArgList arg argumentList ->
     getIdentsFromArg arg ++ getIdentsFromArgList argumentList
 

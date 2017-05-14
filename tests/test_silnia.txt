@@ -1,6 +1,6 @@
 program f;
 
-function silnia (a : int;) : int ;
+function silnia (a : int) : int ;
 begin
     if a <=1 then silnia:=1
     else silnia := a * silnia(a-1) endif;

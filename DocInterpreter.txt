@@ -69,8 +69,9 @@ All other symbols are terminals.
   |  |  **|**  | //FuncHeader// //Declarations// //CompoundStatement// ``;`` 
   | //ProcHeader// | -> | ``procedure`` //Ident// //Arguments// ``;`` 
   | //FuncHeader// | -> | ``function`` //Ident// //Arguments// ``:`` //TypeSpecifier// ``;`` 
-  | //Arguments// | -> | ``(`` //ArgumentList// ``)`` 
-  | //ArgumentList// | -> | **eps**
+  | //Arguments// | -> | ``(`` ``)`` 
+  |  |  **|**  | ``(`` //ArgumentList// ``)`` 
+  | //ArgumentList// | -> | //Arg// 
   |  |  **|**  | //Arg// ``;`` //ArgumentList// 
   | //Arg// | -> | //IdList// ``:`` //TypeSpecifier// 
   | //CompoundStatement// | -> | ``begin`` //StatementList// ``end`` 

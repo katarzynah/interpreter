@@ -2,7 +2,7 @@ program f;
 
 var x, y: int;
 
-procedure add(x, y: int;);
+procedure add(x, y: int);
 var z: int;
 begin
     x := x + 1;

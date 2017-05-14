@@ -25,10 +25,11 @@ ProcHead. ProcHeader ::= "procedure" Ident Arguments ";" ;
 
 FunHead. FuncHeader ::= "function" Ident Arguments ":" TypeSpecifier ";" ;
 
-Args. Arguments ::= "("ArgumentList")" ;
+ArgsEmpty. Arguments ::= "(" ")" ;
+Args.      Arguments ::= "("ArgumentList")" ;
 
-ArgListEmpty. ArgumentList ::= ;
-ArgList.      ArgumentList ::= Arg ";" ArgumentList ;
+ArgListOne. ArgumentList ::= Arg ;
+ArgList.    ArgumentList ::= Arg ";" ArgumentList ;
 
 ArgLabel. Arg ::= IdList ":" TypeSpecifier ;
 

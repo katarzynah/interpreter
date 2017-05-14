@@ -2,7 +2,7 @@ program f;
 
 var x, y: int;
 
-function add(x, y:int;) : int;
+function add(x, y:int) : int;
 begin
     add := x + y;
 end;

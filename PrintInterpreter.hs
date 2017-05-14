@@ -129,11 +129,12 @@ instance Print FuncHeader where
 
 instance Print Arguments where
   prt i e = case e of
+    ArgsEmpty -> prPrec i 0 (concatD [doc (showString "("), doc (showString ")")])
     Args argumentlist -> prPrec i 0 (concatD [doc (showString "("), prt 0 argumentlist, doc (showString ")")])
 
 instance Print ArgumentList where
   prt i e = case e of
-    ArgListEmpty -> prPrec i 0 (concatD [])
+    ArgListOne arg -> prPrec i 0 (concatD [prt 0 arg])
     ArgList arg argumentlist -> prPrec i 0 (concatD [prt 0 arg, doc (showString ";"), prt 0 argumentlist])
 
 instance Print Arg where

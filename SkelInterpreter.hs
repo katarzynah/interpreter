@@ -48,10 +48,11 @@ transFuncHeader x = case x of
   FunHead ident arguments typespecifier -> failure x
 transArguments :: Arguments -> Result
 transArguments x = case x of
+  ArgsEmpty -> failure x
   Args argumentlist -> failure x
 transArgumentList :: ArgumentList -> Result
 transArgumentList x = case x of
-  ArgListEmpty -> failure x
+  ArgListOne arg -> failure x
   ArgList arg argumentlist -> failure x
 transArg :: Arg -> Result
 transArg x = case x of

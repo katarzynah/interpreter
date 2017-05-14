@@ -3,7 +3,7 @@ var i, j, k, l: int;
 s: string;
 b : bool;
 /*
-procedure hej(x : int;);
+procedure hej(x : int);
 var y: string;
 begin
 print(y);

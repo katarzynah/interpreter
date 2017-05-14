@@ -126,9 +126,10 @@ ProcHeader : 'procedure' Ident Arguments ';' { AbsInterpreter.ProcHead $2 $3 }
 FuncHeader :: { FuncHeader }
 FuncHeader : 'function' Ident Arguments ':' TypeSpecifier ';' { AbsInterpreter.FunHead $2 $3 $5 }
 Arguments :: { Arguments }
-Arguments : '(' ArgumentList ')' { AbsInterpreter.Args $2 }
+Arguments : '(' ')' { AbsInterpreter.ArgsEmpty }
+          | '(' ArgumentList ')' { AbsInterpreter.Args $2 }
 ArgumentList :: { ArgumentList }
-ArgumentList : {- empty -} { AbsInterpreter.ArgListEmpty }
+ArgumentList : Arg { AbsInterpreter.ArgListOne $1 }
              | Arg ';' ArgumentList { AbsInterpreter.ArgList $1 $3 }
 Arg :: { Arg }
 Arg : IdList ':' TypeSpecifier { AbsInterpreter.ArgLabel $1 $3 }

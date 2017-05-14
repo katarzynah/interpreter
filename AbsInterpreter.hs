@@ -43,10 +43,10 @@ data ProcHeader = ProcHead Ident Arguments
 data FuncHeader = FunHead Ident Arguments TypeSpecifier
   deriving (Eq, Ord, Show, Read)
 
-data Arguments = Args ArgumentList
+data Arguments = ArgsEmpty | Args ArgumentList
   deriving (Eq, Ord, Show, Read)
 
-data ArgumentList = ArgListEmpty | ArgList Arg ArgumentList
+data ArgumentList = ArgListOne Arg | ArgList Arg ArgumentList
   deriving (Eq, Ord, Show, Read)
 
 data Arg = ArgLabel IdList TypeSpecifier
