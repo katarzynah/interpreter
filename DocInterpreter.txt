@@ -92,7 +92,7 @@ All other symbols are terminals.
   | //WhileStatement// | -> | ``while`` //Expression// ``do`` //Statement// 
   | //IfStatement// | -> | ``if`` //Expression// ``then`` //Statement// ``endif`` 
   |  |  **|**  | ``if`` //Expression// ``then`` //Statement// ``else`` //Statement// ``endif`` 
-  | //PrintStatement// | -> | ``print`` //Expression// 
+  | //PrintStatement// | -> | ``print`` //Actuals// 
   | //Expression// | -> | //SimpleExpression// 
   |  |  **|**  | //SimpleExpression// ``=`` //SimpleExpression// 
   |  |  **|**  | //SimpleExpression// ``<>`` //SimpleExpression// 

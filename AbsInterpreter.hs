@@ -89,7 +89,7 @@ data IfStatement
     | IfStmntWithElse Expression Statement Statement
   deriving (Eq, Ord, Show, Read)
 
-data PrintStatement = PrintStmnt Expression
+data PrintStatement = PrintStmnt Actuals
   deriving (Eq, Ord, Show, Read)
 
 data Expression

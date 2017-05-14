@@ -160,7 +160,7 @@ IfStatement :: { IfStatement }
 IfStatement : 'if' Expression 'then' Statement 'endif' { AbsInterpreter.IfStmnt $2 $4 }
             | 'if' Expression 'then' Statement 'else' Statement 'endif' { AbsInterpreter.IfStmntWithElse $2 $4 $6 }
 PrintStatement :: { PrintStatement }
-PrintStatement : 'print' Expression { AbsInterpreter.PrintStmnt $2 }
+PrintStatement : 'print' Actuals { AbsInterpreter.PrintStmnt $2 }
 Expression :: { Expression }
 Expression : SimpleExpression { AbsInterpreter.ExpSimple $1 }
            | SimpleExpression '=' SimpleExpression { AbsInterpreter.ExpEqual $1 $3 }

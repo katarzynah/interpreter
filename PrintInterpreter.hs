@@ -185,7 +185,7 @@ instance Print IfStatement where
 
 instance Print PrintStatement where
   prt i e = case e of
-    PrintStmnt expression -> prPrec i 0 (concatD [doc (showString "print"), prt 0 expression])
+    PrintStmnt actuals -> prPrec i 0 (concatD [doc (showString "print"), prt 0 actuals])
 
 instance Print Expression where
   prt i e = case e of

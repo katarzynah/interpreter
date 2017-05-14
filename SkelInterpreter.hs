@@ -93,7 +93,7 @@ transIfStatement x = case x of
   IfStmntWithElse expression statement1 statement2 -> failure x
 transPrintStatement :: PrintStatement -> Result
 transPrintStatement x = case x of
-  PrintStmnt expression -> failure x
+  PrintStmnt actuals -> failure x
 transExpression :: Expression -> Result
 transExpression x = case x of
   ExpSimple simpleexpression -> failure x

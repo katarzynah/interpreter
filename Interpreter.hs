@@ -212,11 +212,24 @@ transIfStatement x env = case x of
       _ -> error ("If statement can only be used with expressions that " ++
                   "evaluate to boolean values.")
 
+executePrint :: [Value] -> IO ()
+executePrint [] = do
+  putStrLn ""
+  return ()
+executePrint (x : []) = do
+  putStrLn (show x)
+  return ()
+executePrint (x : xs) = do
+  putStr (show x)
+  putStr " "
+  executePrint xs
+
 transPrintStatement :: PrintStatement -> GEnv -> IO GEnv
 transPrintStatement x env = case x of
-  PrintStmnt expression -> do
-    (val, env') <- transExpression expression env
-    print val
+  PrintStmnt actuals -> do
+    let expressions = transActuals actuals
+    (values, env') <- evaluateArguments expressions env
+    executePrint values
     return env'
 
 -- Given two simple expressions, environment and a comparison function,

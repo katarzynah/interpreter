@@ -59,7 +59,7 @@ WhileStmnt. WhileStatement ::= "while" Expression "do" Statement ;
 IfStmnt.         IfStatement ::= "if" Expression "then" Statement "endif";
 IfStmntWithElse. IfStatement ::= "if" Expression "then" Statement "else" Statement "endif";
 
-PrintStmnt. PrintStatement ::= "print" Expression ;
+PrintStmnt. PrintStatement ::= "print" Actuals ;
 
 ExpSimple.         Expression ::= SimpleExpression ;
 ExpEqual.          Expression ::= SimpleExpression "=" SimpleExpression ;
