@@ -1,3 +1,0 @@
-Interpret: Function/procedure Ident "hej" not defined.
-CallStack (from HasCallStack):
-  error, called at ./ProgramState.hs:155:21 in main:ProgramState

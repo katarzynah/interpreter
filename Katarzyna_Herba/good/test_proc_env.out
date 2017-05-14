@@ -1,8 +1,0 @@
-0
-10
-5
-11
-16
-0
-11
-[(fromList [(Ident "x",0),(Ident "y",11)],fromList [(Ident "proc",ProcDecProc (ProcHead (Ident "proc") ArgsEmpty) (Dec (VarDecFull (VarDecListEnd (VarDecLabel (IdL (Ident "x") (IdLEnd (Ident "z"))) TypeSpecInt))) ProcDecEmpty) (CompStmnt (StmntList (SAss (AssStmnt (Ident "x") (ExpSimple (SimpleExpTerm (TermFactor (FactorConstant (ConstInt 5))))))) (StmntList (SPrint (PrintStmnt (Act (ExpListOne (ExpSimple (SimpleExpTerm (TermFactor (FactorIdent (Ident "x"))))))))) (StmntList (SAss (AssStmnt (Ident "y") (ExpSimple (SimpleExpAdd (SimpleExpTerm (TermFactor (FactorIdent (Ident "y")))) (TermFactor (FactorConstant (ConstInt 1))))))) (StmntList (SPrint (PrintStmnt (Act (ExpListOne (ExpSimple (SimpleExpTerm (TermFactor (FactorIdent (Ident "y"))))))))) (StmntList (SAss (AssStmnt (Ident "z") (ExpSimple (SimpleExpAdd (SimpleExpTerm (TermFactor (FactorIdent (Ident "x")))) (TermFactor (FactorIdent (Ident "y"))))))) (StmntList (SPrint (PrintStmnt (Act (ExpListOne (ExpSimple (SimpleExpTerm (TermFactor (FactorIdent (Ident "z"))))))))) StmntListEmpty))))))))])]

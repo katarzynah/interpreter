@@ -1,3 +1,0 @@
-Interpret: Can't divide by 0.
-CallStack (from HasCallStack):
-  error, called at ./InterpreterState.hs:284:34 in main:InterpreterState

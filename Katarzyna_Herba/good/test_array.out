@@ -1,5 +1,0 @@
-undefined
-13
-fromList [15,13,3,undefined,undefined]
-fromList [fromList [1,2],fromList [3,4]]
-[(fromList [(Ident "x",fromList [fromList [fromList [undefined,undefined,undefined,undefined,undefined],fromList [15,13,3,undefined,undefined]],fromList [fromList [undefined,undefined,undefined,undefined,undefined],fromList [undefined,undefined,undefined,undefined,undefined]],fromList [fromList [undefined,undefined,undefined,undefined,undefined],fromList [undefined,undefined,undefined,undefined,undefined]]]),(Ident "z",fromList [fromList [1,2],fromList [3,4]])],fromList [])]

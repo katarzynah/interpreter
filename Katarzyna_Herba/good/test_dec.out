@@ -1,7 +1,0 @@
-"k =" 3
-"j = k + 2 =" 5
-"i = j * k =" 15
-"l = i / k =" 5
-"b := l = j =" True
-"k = 12 - l =" 7
-[(fromList [(Ident "b",True),(Ident "i",15),(Ident "j",5),(Ident "k",7),(Ident "l",5),(Ident "s","haj")],fromList [])]

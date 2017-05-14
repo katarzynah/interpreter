@@ -1,3 +1,0 @@
-Interpret: Procedures don't return values.
-CallStack (from HasCallStack):
-  error, called at ./InterpreterState.hs:144:12 in main:InterpreterState
