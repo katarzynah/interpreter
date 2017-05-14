@@ -1,0 +1,11 @@
+program f;
+var j: int;
+
+begin
+    j := 10;
+    while j > 0 do
+    begin
+        j := j - 1;
+        print(j);
+    end;
+end.

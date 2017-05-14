@@ -1,0 +1,10 @@
+program f;
+var i, k: int;
+
+begin
+    k := 3;
+    for i := 1 to 10 do
+    begin
+        print(k * i + 3);
+    end;
+end.

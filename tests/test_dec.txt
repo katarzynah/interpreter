@@ -2,14 +2,19 @@ program f;
 var i, j, k, l: int;
 s: string;
 b : bool;
-/*
-procedure hej(x : int);
-var y: string;
 begin
-print(y);
-print("hej");
-end;
-*/
-begin
+    k := 3;
+    print("k =", k);
+    j := k + 2;
+    print("j = k + 2 =", k + 2);
+    i := j * k;
+    print("i = j * k =", j * k);
+    l := i / k;
+    print("l = i / k =", l);
+    b := l = j;
+    print("b := l = j =", b);
+    k := 12 - l;
+    print("k = 12 - l =", k);
+    s := "haj";
 end.
 

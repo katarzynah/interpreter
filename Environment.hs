@@ -1,14 +1,7 @@
 module Environment
-(GEnv,
- Env,
- emptyGEnv,
- emptyEnv,
- declareVar,
- declareVars,
- setVarVal,
+(
  setVarsVals,
  setArrayVal,
- getVarVal,
  getArrayVal,
  setDecl,
  getDecl)

@@ -1,28 +1,39 @@
 module Interpreter where
 
+import Control.Monad.State 
+
 import AbsInterpreter
 import Environment
 import Value
+import ProgramState
 
-transProgram :: Program -> IO ()
+runProgram :: Program -> IO ()
+runProgram program = do
+  (_, _) <- runStateT (transProgram program) emptyGEnv
+  return ()
+
+transProgram :: Program -> ProgramState
 transProgram x = case x of
   Prog _ declarations compoundStmt -> do
-    env <- transDeclarations declarations emptyGEnv
-    _ <- transCompoundStatement compoundStmt env
-    return ()
+    transDeclarations declarations
+    --transCompoundStatement com
+    --env <- transDeclarations declarations emptyGEnv
+    --_ <- transCompoundStatement compoundStmt env
+    --return ()
 
-transDeclarations :: Declarations -> GEnv -> IO GEnv
-transDeclarations x env = case x of
+transDeclarations :: Declarations -> ProgramState
+transDeclarations x = case x of
   Dec varDeclarations procDeclarations -> do
-    env' <- transVariableDeclarations varDeclarations env
-    env'' <- transProcedureDeclarations procDeclarations env'
-    return env''
+    transVariableDeclarations varDeclarations
+    --env' <- transVariableDeclarations varDeclarations env
+    --env'' <- transProcedureDeclarations procDeclarations env'
+    --return env''
 
-transVariableDeclarations :: VariableDeclarations -> GEnv -> IO GEnv
-transVariableDeclarations x env = case x of
-  VarDecEmpty -> return env
-  VarDecFull varDeclarationList ->
-    transVariableDeclarationList varDeclarationList env
+transVariableDeclarations :: VariableDeclarations -> ProgramState
+transVariableDeclarations x = case x of
+  VarDecEmpty -> return (VNull)
+  --VarDecFull varDeclarationList ->
+  --  transVariableDeclarationList varDeclarationList env
 
 transVariableDeclarationList :: VariableDeclarationList -> GEnv -> IO GEnv
 transVariableDeclarationList x env = case x of

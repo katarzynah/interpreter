@@ -10,7 +10,7 @@ import AbsInterpreter
 import System.Environment (getArgs)
 import System.Exit (exitFailure)
 
-import Interpreter
+import InterpreterState
 
 import ErrM
 
@@ -26,7 +26,7 @@ run p s = let ts = myLLexer s in case p ts of
     Bad err -> do
         putStrLn err
         exitFailure
-    Ok tree -> transProgram tree
+    Ok tree -> runProgram tree
 
 main :: IO ()
 main = do
