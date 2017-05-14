@@ -146,7 +146,7 @@ _setArrayVal :: GEnv -> Ident -> [Int] -> Value -> GEnv
 _setArrayVal [] ident _ _ = error ("Variable " ++ show ident ++ " not defined.")
 _setArrayVal ((localVEnv, localPEnv) : envs) ident dims val =
   case Map.lookup ident localVEnv of
-    Nothing -> ((localVEnv, localPEnv) : _setArrayVal envs ident val)
+    Nothing -> ((localVEnv, localPEnv) : _setArrayVal envs ident dims val)
     Just array@(VArray _) ->
       ((Map.insert ident (_setValueInArray array dims val) localVEnv,
         localPEnv) : envs)
