@@ -3,31 +3,37 @@ program f;
 procedure x();
     var x,y :int;
 
+    procedure hej();
+        begin
+            print("hej");
+        end;
+
     procedure z();
         var a,b : int;
         s: string;
 
-        procedure hej();
+        procedure ho(c: int);
             begin
-                print("hej");
-            end;
-
-        procedure ho();
-            begin
-                print("ho");
+                if (c > 0) then
+                begin
+                    print("ho");
+                    ho(c - 1);
+                end
+                else print("hej-ho") endif;
             end;
 
         begin
-            hej();
-            ho();
+            ho(x);
             x := 15;
             a := 12;
+            hej();
         end;
 
     begin
+        x := 5;
+        z();
         z();
         print(x);
-        print(a);
     end;
 
 begin

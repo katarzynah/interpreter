@@ -1,9 +1,5 @@
 module Environment
-(
- setVarsVals,
- setArrayVal,
- setDecl,
- getDecl)
+()
 where
 
 import AbsInterpreter

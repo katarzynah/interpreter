@@ -5,7 +5,6 @@ import Control.Monad.State
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
 
-import Environment
 import Value
 import AbsInterpreter
 
@@ -103,6 +102,13 @@ _setVarVal ((localVEnv, localPEnv) : envs) ident val =
 setVarVal :: Ident -> Value -> ProgramState ()
 setVarVal ident val = state $ \(env) -> ((), _setVarVal env ident val)
 
+-- Set values of a list of idents. The lists must be of same length!
+setVarsVals :: [Ident] -> [Value] -> ProgramState ()
+setVarsVals [] _ = return ()
+setVarsVals (ident : idents) (val : vals) = do
+  setVarVal ident val
+  setVarsVals idents vals
+
 _setValueInArray :: Value -> [Int] -> Value -> Value
 _setValueInArray array [] _ =
   error "You cannot assign to array, just its elements."
@@ -144,3 +150,23 @@ setDecl ident procDec = state $ \(env) ->
         Nothing -> ((), (localVEnv, Map.insert ident procDec localPEnv) : envs)
         Just _ -> error ("Function/procedure " ++ show ident ++
                          " already defined.")
+
+-- Get definition of function/procedure with given identifier.
+_getDecl :: GEnv -> Ident -> ProcDec
+_getDecl [] ident = error ("Function/procedure " ++ show ident ++
+                          " not defined.")
+_getDecl ((_, localPEnv) : envs) ident =
+  case Map.lookup ident localPEnv of
+    Nothing -> _getDecl envs ident
+    Just val -> val
+
+getDecl :: Ident -> ProgramState ProcDec
+getDecl ident = state $ \(env) -> (_getDecl env ident, env)
+
+addLocalEnvironment :: ProgramState ()
+addLocalEnvironment = state $ \(env) -> ((), (emptyEnv : env))
+
+exitLocalEnvironment :: ProgramState ()
+exitLocalEnvironment = state $ \(env) ->
+  case env of
+    (_ : globalEnv) -> ((), globalEnv)

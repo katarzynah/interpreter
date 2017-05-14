@@ -1,0 +1,16 @@
+program f;
+var x: array [3,3] of int;
+
+function fill() : array [3,3] of int;
+var i, j : int;
+begin
+    for i := 1 to 3 do
+        for j := 1 to 3 do
+            fill[i-1,j-1] := i * j;
+end;
+
+begin
+    x := fill();
+    print("filled array", x);
+end.
+    

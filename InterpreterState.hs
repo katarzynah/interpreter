@@ -70,7 +70,7 @@ transStatement x = case x of
   SEmpty -> return ()
   SComp compoundStmnt -> transCompoundStatement compoundStmnt
   SAss assignmentStmnt -> transAssignmentStatement assignmentStmnt
-  --SProc procCall -> transProcedureCall procCall
+  SProc procCall -> transProcedureCall procCall
   SFor forStmnt -> transForStatement forStmnt
   SWhile whileStmnt -> transWhileStatement whileStmnt
   SIf ifStmnt -> transIfStatement ifStmnt
@@ -87,6 +87,54 @@ transAssignmentStatement x = case x of
     values <- evaluateArguments expressions
     let dims = evaluateToInts values
     setArrayVal ident dims val
+
+-- Given identificators of procedure arguments, the values of expressions with
+-- which the procedure was called and declarations in the procedure, updates
+-- the environment in the procedure.
+setUpProcEnv :: [Ident] -> [Value] -> Declarations -> ProgramState ()
+setUpProcEnv idents values declarations = do
+  if (length values) /= (length idents) then error "Wrong number of arguments."
+  else do
+    -- adding a new local environment to our environments
+    addLocalEnvironment
+    -- declaring procedure arguments in the environment
+    declareVars idents []
+    -- setting the values of arguments in the environment
+    setVarsVals idents values
+    -- adding local variable declarations
+    transDeclarations declarations
+
+transProcedureCall :: ProcedureCall -> ProgramState ()
+transProcedureCall x = case x of
+  ProcCall ident actuals -> do
+    procDec <- getDecl ident --here
+    let arguments = transActuals actuals
+    values <- evaluateArguments arguments
+    case procDec of
+      (ProcDecProc procHeader declarations compoundStmnt) -> do
+        let argumentIdents = getIdentsFromProcHeader procHeader
+        setUpProcEnv argumentIdents values declarations
+        transCompoundStatement compoundStmnt
+        exitLocalEnvironment
+
+transFunctionCall :: FunctionCall -> ProgramState Value
+transFunctionCall x = case x of
+  FunsCall ident actuals -> do
+    funcDec <- getDecl ident
+    let arguments = transActuals actuals
+    values <- evaluateArguments arguments
+    case funcDec of
+      (ProcDecFun funcHeader declarations compoundStmnt) -> do
+        let argumentIdents = getIdentsFromFuncHeader funcHeader
+        let returnValueDim = getDimsFromFuncHeader funcHeader
+        setUpProcEnv argumentIdents values declarations
+        -- adding variable with same identificator as function to the environment
+        declareVar ident returnValueDim
+        transCompoundStatement compoundStmnt
+        val <- getVarVal ident
+        exitLocalEnvironment
+        return (val)
+      _ -> error "Procedures don't return values."
 
 -- Executes the for loop, ident is the identyficator of the counter variable,
 -- endValue is the value which causes the loop to finish when counter reaches
@@ -147,8 +195,7 @@ _evaluateArguments (expr : exprs) values = do
   val <- transExpression expr
   _evaluateArguments exprs (values ++ [val])
 
--- Given a list of expressions evaluates them in given environment, and returns
--- list of their values and new environment in context.
+-- Given a list of expressions returns list of their values.
 evaluateArguments :: [Expression] -> ProgramState [Value]
 evaluateArguments exprs  = _evaluateArguments exprs []
 
@@ -171,9 +218,8 @@ transPrintStatement x = case x of
     values <- evaluateArguments expressions
     liftIO $ executePrint values
 
--- Given two simple expressions, environment and a comparison function,
--- evaluates them and returns the result of the function applied to the
--- values and returns it with the new environment in context.
+-- Given two simple expressions and a comparison function, evaluates them and
+-- returns the result of the function applied to the values.
 compareExpressions :: (SimpleExpression -> SimpleExpression -> 
                        (Value -> Value -> Bool) -> ProgramState Value)
 compareExpressions simExp1 simExp2 comparer = do
@@ -198,7 +244,7 @@ transExpression x = case x of
     (compareExpressions simpleExpr1 simpleExpr2 (>=))
 
 -- Given simple expression, term and a binary function on ints, evaluates them
--- and return the result of the function and new environment in context. 
+-- and returns the result of the function. 
 computeSimpleExpression :: (SimpleExpression -> Term -> (Int -> Int -> Int) ->
                             ProgramState Value)
 computeSimpleExpression simpleExpr term fun = do
@@ -245,7 +291,7 @@ transFactor x = case x of
   FactorExpression expression -> transExpression expression
   FactorPlus factor -> computeTransFactor factor 1
   FactorMinus factor -> computeTransFactor factor (-1)
-  --FactorFunctionCall functionCall -> transFunctionCall functionCall env
+  FactorFunctionCall functionCall -> transFunctionCall functionCall
   FactorConstant constant -> return (transConstant constant)
   FactorIdent ident -> getVarVal ident
   FactorArray ident expressionList -> do

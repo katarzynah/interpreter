@@ -1,7 +1,7 @@
 Język oparty jest na Pascalu (nieznacznie zmieniłam składnię od deklaracji,
 głównie naprawiałam błędy, nowa gramatyka jest w pliku Docinterpreter.pdf).
-Do zaimplementowania użyłam BNFC. Zmienne oraz funkcje trzymam w zmiennej
-reprezentującej środowisko.
+Do zaimplementowania użyłam BNFC. Korzystam z transforamtora monad StateT,
+w której trzymam środowisko (wszystko z tym związane w pliku ProgramState.hs).
 
 Z mojej deklaracji zaimplementowałam wszystko i ponadto:
 - jawne obsłużenie błędów wykonania
@@ -23,4 +23,7 @@ W katalogu good:
 - test_while.txt - pętle while
 - test_collatz.txt - while z if
 - test_array.txt - przypisanie, deklaracja i dostęp do elementów w tablicy
+- test_proc_env.txt - procedura bez parametrów nadpisująca zmienne globalne
+- test_embedded_fun.txt - zagnieżdżone procedury i rekurencja
+- test_array_fun.txt - funkcja zwracająca tablicę
 
