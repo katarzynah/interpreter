@@ -14,9 +14,13 @@ import Interpreter
 
 import ErrM
 
+type ParseFun a = [Token] -> Err a
 
-run :: String -> IO()
-run s = case pProgram (myLexer s) of
+runFile :: ParseFun Program -> FilePath -> IO ()
+runFile p f = readFile f >>= run p
+
+run :: ParseFun Program -> String ->  IO()
+run p s = let ts = myLexer s in case p ts of
     Bad err -> do
         putStrLn err
         exitFailure
@@ -27,5 +31,5 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-    [file] -> readFile file >>= run
-    [] -> hGetContents stdin >>= run
+    [] -> hGetContents stdin >>= run pProgram
+    fs -> mapM_ (runFile pProgram) fs
