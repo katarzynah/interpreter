@@ -2,4 +2,5 @@ program f;
 
 begin
     x := 10;
+    print(x);
 end.
