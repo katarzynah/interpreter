@@ -1,0 +1,7 @@
+program f;
+
+var x: int;
+var y: int;
+
+begin
+end.

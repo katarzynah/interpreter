@@ -1,5 +1,14 @@
 module Environment
-()
+(emptyGEnv,
+ declareVar,
+ declareVars,
+ setVarVal,
+ setVarsVals,
+ setArrayVal,
+ getVarVal,
+ getArrayVal,
+ setDecl,
+ getDecl)
 where
 
 import AbsInterpreter

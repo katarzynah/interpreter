@@ -1,0 +1,7 @@
+program f;
+
+var x, y: int;
+
+begin
+    if x \= y then print("not equal") endif;
+end.

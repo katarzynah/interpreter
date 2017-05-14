@@ -1,0 +1,16 @@
+program p;
+
+function x() : int;
+
+procedure hej();
+begin
+    print("hej");
+end;
+
+begin
+    x := 3;
+end;
+
+begin
+    hej();
+end.

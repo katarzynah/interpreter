@@ -44,7 +44,6 @@ _getValueToDeclare [] = VNull
 _getValueToDeclare (int : ints) =
   _getArrayOfValues int (_getValueToDeclare ints)
 
--- ((localVEnv, localPEnv) : envs)
 declareVar :: Ident -> [Int] -> ProgramState ()
 declareVar ident dims = state $ \(env) ->
   case env of

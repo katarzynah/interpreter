@@ -1,0 +1,5 @@
+program p;
+
+begin
+    while 12 do;
+end.

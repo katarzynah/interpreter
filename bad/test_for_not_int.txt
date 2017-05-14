@@ -1,0 +1,7 @@
+program f;
+
+var i: int;
+
+begin
+for i := "hej" to "ho" do print("hej-ho");
+end.

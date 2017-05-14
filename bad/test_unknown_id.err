@@ -1,0 +1,3 @@
+Interpret: Variable Ident "x" not defined.
+CallStack (from HasCallStack):
+  error, called at ./ProgramState.hs:94:27 in main:ProgramState

@@ -1,0 +1,12 @@
+program k;
+
+var a: array[3] of int;
+x: int;
+
+begin
+    a[0] := 1;
+    a[1] := 2;
+    a[2] := 3;
+    print(a);
+    x := a[3];
+end.

@@ -116,6 +116,13 @@ transProcedureCall x = case x of
         setUpProcEnv argumentIdents values declarations
         transCompoundStatement compoundStmnt
         exitLocalEnvironment
+      (ProcDecFun funcHeader declarations compoundStmnt) -> do
+        let argumentIdents = getIdentsFromFuncHeader funcHeader
+        let returnValueDim = getDimsFromFuncHeader funcHeader
+        setUpProcEnv argumentIdents values declarations
+        declareVar ident returnValueDim
+        transCompoundStatement compoundStmnt
+        exitLocalEnvironment
 
 transFunctionCall :: FunctionCall -> ProgramState Value
 transFunctionCall x = case x of

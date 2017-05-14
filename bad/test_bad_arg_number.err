@@ -1,0 +1,3 @@
+Interpret: Wrong number of arguments.
+CallStack (from HasCallStack):
+  error, called at ./InterpreterState.hs:96:46 in main:InterpreterState

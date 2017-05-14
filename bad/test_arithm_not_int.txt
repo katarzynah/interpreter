@@ -1,0 +1,5 @@
+program f;
+
+begin
+    print(1 + true);
+end.

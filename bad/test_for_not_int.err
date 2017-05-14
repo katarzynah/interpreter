@@ -1,0 +1,3 @@
+Interpret: For statement can only be used with expressions that evaluate to integers.
+CallStack (from HasCallStack):
+  error, called at ./InterpreterState.hs:159:10 in main:InterpreterState

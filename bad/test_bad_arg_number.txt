@@ -1,0 +1,10 @@
+program f;
+
+function add(x, y: int) : int;
+begin
+    add := x + y;
+end;
+
+begin
+    add(1,2,3);
+end.

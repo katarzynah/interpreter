@@ -19,6 +19,7 @@ Załączam następujące programy:
 
 W katalogu good:
 - test_dec.txt - deklaracje + arytmetyka
+- test_str_int.txt - string i rzutowanie
 - test_for.txt - pętla for
 - test_while.txt - pętle while
 - test_collatz.txt - while z if
@@ -26,4 +27,21 @@ W katalogu good:
 - test_proc_env.txt - procedura bez parametrów nadpisująca zmienne globalne
 - test_embedded_fun.txt - zagnieżdżone procedury i rekurencja
 - test_array_fun.txt - funkcja zwracająca tablicę
+(print jest w większości tych przykładów)
+
+W katalogu bad:
+- test_double_var_block.txt - blad skaldniowy, dwa bloki deklarujące zmienne kolo siebie
+- test_no_begin.txt - blad skladniowy, brak begin
+- test_wrong_symbol.txt - blad skladniowy, użyty nieorozpoznawany token
+- test_unknown_id.txt - nieznany identyfikator
+- test_unknown_fun_id.txt - nieznany id funkcji, pokazuje, że funckja zdefiniowana
+    w innej funckji nie jest widoczna na zewnątrz
+- test_bad_arg_number.txt - zła liczba argumentów (funkcja może być wywołana bez
+    przypisania, wtedy zwracana przez nią wartość jest tracona)
+- test_div_zero.txt - dzielenie przez 0
+- test_index_out_of_bounds.txt - index out of bounds w tablicy
+- test_proc_assign.txt - przypisanie zmiennej wywołania procedury
+- test_for_not_int.txt - wywołanie pętlie for dla wartości nie będącej intem
+- test_while_not_bool.txt - wywołanie pętli while dla warunku nie będącym bool
+- test_arithm_not_int.txt - arytmetyka nie na intach
 
